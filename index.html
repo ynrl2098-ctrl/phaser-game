@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Phaser Dodge Game</title>
+  <title>Space Invasion</title>
   <style>
     body {
       margin: 0;
-      background-color: #111;
+      background-color: #050515;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -32,7 +32,7 @@ const config = {
   scene: { preload: preload, create: create, update: update }
 };
 
-let player, cursors, obstacles, scoreText;
+let player, cursors, aliens, scoreText;
 let score = 0;
 let spawnTimer = 0;
 let game = new Phaser.Game(config);
@@ -40,13 +40,14 @@ let game = new Phaser.Game(config);
 function preload() {}
 
 function create() {
-  // Create Player (Green Square)
-  player = this.add.rectangle(200, 530, 30, 30, 0x00ff00);
+  // Create Spaceship using Emoji text
+  player = this.add.text(200, 530, '🚀', { fontSize: '32px' }).setOrigin(0.5);
   this.physics.add.existing(player);
   player.body.setCollideWorldBounds(true);
+  player.body.setSize(30, 30); // Adjust collision boundary
 
-  // Group for obstacles
-  obstacles = this.physics.add.group();
+  // Group for falling aliens
+  aliens = this.physics.add.group();
 
   // Score display
   scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '20px', fill: '#fff' });
@@ -55,36 +56,39 @@ function create() {
   cursors = this.input.keyboard.createCursorKeys();
 
   // Collision detection
-  this.physics.add.overlap(player, obstacles, gameOver, null, this);
+  this.physics.add.overlap(player, aliens, gameOver, null, this);
 }
 
 function update(time, delta) {
-  // Player Controls
+  // Player Movement
   if (cursors.left.isDown) {
-    player.body.setVelocityX(-250);
+    player.body.setVelocityX(-280);
   } else if (cursors.right.isDown) {
-    player.body.setVelocityX(250);
+    player.body.setVelocityX(280);
   } else {
     player.body.setVelocityX(0);
   }
 
-  // Spawn obstacles
+  // Spawn Aliens periodically
   spawnTimer += delta;
-  if (spawnTimer > 800) {
+  if (spawnTimer > 700) {
     spawnTimer = 0;
-    let xPos = Phaser.Math.Between(20, 380);
-    let obstacle = this.add.rectangle(xPos, -20, 25, 25, 0xff0055);
-    obstacles.add(obstacle);
-    this.physics.add.existing(obstacle);
+    let xPos = Phaser.Math.Between(30, 370);
+    
+    // Create Alien using Emoji text
+    let alien = this.add.text(xPos, -20, '👾', { fontSize: '28px' }).setOrigin(0.5);
+    aliens.add(alien);
+    this.physics.add.existing(alien);
+    alien.body.setSize(25, 25);
     
     // Increase speed as score grows
-    obstacle.body.setVelocityY(200 + score * 5); 
+    alien.body.setVelocityY(200 + score * 4); 
   }
 
-  // Score points when obstacles clear screen
-  obstacles.getChildren().forEach((obs) => {
-    if (obs.y > 620) {
-      obs.destroy();
+  // Cleanup off-screen aliens and update score
+  aliens.getChildren().forEach((alien) => {
+    if (alien.y > 630) {
+      alien.destroy();
       score += 10;
       scoreText.setText('Score: ' + score);
     }
@@ -93,9 +97,9 @@ function update(time, delta) {
 
 function gameOver() {
   this.physics.pause();
-  player.fillColor = 0xff0000;
-  this.add.text(100, 280, 'GAME OVER', { fontSize: '32px', fill: '#fff' });
-  this.add.text(80, 320, 'Refresh page to restart', { fontSize: '16px', fill: '#aaa' });
+  player.setText('💥'); // Explosion on hit
+  this.add.text(90, 270, 'GAME OVER', { fontSize: '36px', fill: '#ff0055', fontWeight: 'bold' });
+  this.add.text(85, 320, 'Refresh page to restart', { fontSize: '16px', fill: '#aaa' });
 }
 </script>
 
