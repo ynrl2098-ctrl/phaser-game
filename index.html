@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vice City 3D Sandbox</title>
+  <title>3D Car Parking Simulator</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
       background: #000;
-      font-family: 'Trebuchet MS', 'Arial', sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       user-select: none;
     }
     #game-container {
@@ -18,39 +18,61 @@
       position: absolute;
     }
 
-    /* Vice City 80s Style HUD */
+    /* HUD Elements */
     .hud {
       position: absolute;
       top: 20px;
-      right: 20px;
-      text-align: right;
-      color: #ff007f;
-      text-shadow: 2px 2px 0px #00f0ff, -1px -1px 0px #000;
+      left: 20px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
     }
-    .title {
-      font-size: 28px;
-      font-weight: 900;
-      font-style: italic;
-      letter-spacing: 2px;
-      margin-bottom: 5px;
-    }
-    .stats {
-      font-size: 22px;
-      font-weight: bold;
-      color: #facc15;
-      text-shadow: 2px 2px 0px #000;
-    }
+    .hud h2 { margin: 0 0 5px 0; font-size: 18px; color: #38bdf8; }
+    .status { font-weight: bold; color: #facc15; font-size: 14px; }
 
-    .controls-hint {
+    .controls-panel {
       position: absolute;
       bottom: 20px;
       left: 20px;
-      color: #00f0ff;
-      background: rgba(0,0,0,0.6);
-      padding: 10px 15px;
-      border: 1px solid #ff007f;
-      border-radius: 4px;
-      font-size: 14px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 12px 18px;
+      border-radius: 8px;
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .controls-panel b { color: #fff; }
+
+    /* Victory / Game Over Overlay */
+    #message-box {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(15, 23, 42, 0.95);
+      border: 2px solid #38bdf8;
+      padding: 30px 50px;
+      border-radius: 12px;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+    }
+    #message-box h1 { margin: 0 0 10px 0; font-size: 32px; }
+    #message-box p { margin: 0 0 20px 0; color: #94a3b8; }
+    #message-box button {
+      background: #38bdf8;
+      color: #0f172a;
+      border: none;
+      padding: 10px 24px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -59,22 +81,28 @@
   <div id="game-container"></div>
 
   <div class="hud">
-    <div class="title">VICE CITY 3D</div>
-    <div class="stats" id="speedometer">000 MPH</div>
+    <h2>PARKING CHALLENGE</h2>
+    <div class="status" id="status-text">Park inside the glowing spot!</div>
   </div>
 
-  <div class="controls-hint">
+  <div class="controls-panel">
     <b>CONTROLS:</b><br>
     W / Up Arrow: Accelerate<br>
     S / Down Arrow: Reverse / Brake<br>
-    A / D / Left / Right: Steering
+    A / D / Left / Right: Turn Wheels
+  </div>
+
+  <div id="message-box">
+    <h1 id="msg-title">PARKED PERFECTLY!</h1>
+    <p id="msg-desc">You successfully completed the parking maneuver.</p>
+    <button onclick="location.reload()">PLAY AGAIN</button>
   </div>
 
   <script>
     // --- SCENE SETUP ---
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1a0b2e); // Deep purple sunset
-    scene.fog = new THREE.FogExp2(0x1a0b2e, 0.008);
+    scene.background = new THREE.Color(0x0f172a);
+    scene.fog = new THREE.FogExp2(0x0f172a, 0.015);
 
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -82,149 +110,178 @@
     renderer.shadowMap.enabled = true;
     document.getElementById('game-container').appendChild(renderer.domElement);
 
-    // --- LIGHTS ---
-    const ambientLight = new THREE.AmbientLight(0xff007f, 0.6);
+    // --- LIGHTING ---
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0x00f0ff, 0.8);
-    dirLight.position.set(50, 100, 50);
-    dirLight.castShadow = true;
-    scene.add(dirLight);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    sunLight.position.set(40, 60, 20);
+    sunLight.castShadow = true;
+    scene.add(sunLight);
 
-    // --- 80s SUNSET ---
-    const sunGeo = new THREE.CircleGeometry(120, 32);
-    const sunMat = new THREE.MeshBasicMaterial({ color: 0xff5500, fog: false });
-    const sun = new THREE.Mesh(sunGeo, sunMat);
-    sun.position.set(0, 40, -400);
-    scene.add(sun);
+    // --- ENVIRONMENT & PARKING LOT ---
+    const lotSize = 100;
+    const groundGeo = new THREE.PlaneGeometry(lotSize, lotSize);
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
 
-    // --- CITY ENVIRONMENT ---
-    const citySize = 600;
-    const gridHelper = new THREE.GridHelper(citySize, 60, 0xff007f, 0x00f0ff);
-    gridHelper.position.y = 0.1;
-    scene.add(gridHelper);
-
-    // Road Base
-    const roadGeo = new THREE.PlaneGeometry(citySize, citySize);
-    const roadMat = new THREE.MeshStandardMaterial({ color: 0x0a0a12, roughness: 0.8 });
-    const road = new THREE.Mesh(roadGeo, roadMat);
-    road.rotation.x = -Math.PI / 2;
-    scene.add(road);
-
-    // Buildings & Palm Trees
-    const buildingGeo = new THREE.BoxGeometry(1, 1, 1);
+    // Perimeter Barriers
+    const obstacles = [];
+    const barrierMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 });
     
-    function createCity() {
-      for (let x = -250; x <= 250; x += 40) {
-        for (let z = -250; z <= 250; z += 40) {
-          if (Math.abs(x) < 30 && Math.abs(z) < 30) continue; // Keep spawn clear
-
-          if (Math.random() > 0.3) {
-            // Neon Building
-            const height = 15 + Math.random() * 45;
-            const color = Math.random() > 0.5 ? 0x00f0ff : 0xff007f;
-            const mat = new THREE.MeshStandardMaterial({ color: 0x111122, emissive: color, emissiveIntensity: 0.2 });
-            const building = new THREE.Mesh(buildingGeo, mat);
-            building.scale.set(20, height, 20);
-            building.position.set(x, height / 2, z);
-            scene.add(building);
-          } else {
-            // Palm Tree Trunk
-            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3d2314 });
-            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 10), trunkMat);
-            trunk.position.set(x, 5, z);
-            
-            // Leaves
-            const leafMat = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
-            const leaves = new THREE.Mesh(new THREE.ConeGeometry(4, 5, 5), leafMat);
-            leaves.position.set(x, 11, z);
-            
-            scene.add(trunk, leaves);
-          }
-        }
-      }
+    function createWall(x, z, w, d) {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 2, d), barrierMat);
+      wall.position.set(x, 1, z);
+      wall.castShadow = true;
+      wall.receiveShadow = true;
+      scene.add(wall);
+      obstacles.push(new THREE.Box3().setFromObject(wall));
     }
-    createCity();
 
-    // --- CAR CREATION (VICE CITY SPORTS CAR) ---
+    // Border Walls
+    createWall(0, -lotSize/2, lotSize, 2);
+    createWall(0, lotSize/2, lotSize, 2);
+    createWall(-lotSize/2, 0, 2, lotSize);
+    createWall(lotSize/2, 0, 2, lotSize);
+
+    // Parked Traffic Cars (Obstacles)
+    function createParkedCar(x, z, rotY) {
+      const group = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(2.2, 1.2, 4.4),
+        new THREE.MeshStandardMaterial({ color: Math.random() > 0.5 ? 0x64748b : 0x0284c7 })
+      );
+      body.position.y = 0.8;
+      body.castShadow = true;
+      group.add(body);
+      group.position.set(x, 0, z);
+      group.rotation.y = rotY;
+      scene.add(group);
+      
+      obstacles.push(new THREE.Box3().setFromObject(body));
+    }
+
+    // Row of parked cars
+    createParkedCar(-15, -10, 0);
+    createParkedCar(-10, -10, 0);
+    createParkedCar(10, -10, 0);
+    createParkedCar(15, -10, 0);
+
+    // --- TARGET PARKING BAY ---
+    const targetX = 0, targetZ = -10;
+    const targetSize = { w: 3.5, d: 5.5 };
+
+    // Glowing Target Spot
+    const targetGeo = new THREE.PlaneGeometry(targetSize.w, targetSize.d);
+    const targetMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
+    const targetMesh = new THREE.Mesh(targetGeo, targetMat);
+    targetMesh.rotation.x = -Math.PI / 2;
+    targetMesh.position.set(targetX, 0.05, targetZ);
+    scene.add(targetMesh);
+
+    // Yellow Parking Bay Lines
+    const lineMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+    const leftLine = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 6), lineMat);
+    leftLine.rotation.x = -Math.PI / 2;
+    leftLine.position.set(targetX - 2, 0.06, targetZ);
+    const rightLine = leftLine.clone();
+    rightLine.position.x = targetX + 2;
+    scene.add(leftLine, rightLine);
+
+    // --- PLAYER CAR ---
     const carGroup = new THREE.Group();
+    const carWidth = 2.2, carHeight = 1.2, carLength = 4.4;
 
-    // Body
-    const carBodyGeo = new THREE.BoxGeometry(2.2, 0.8, 4.5);
-    const carBodyMat = new THREE.MeshStandardMaterial({ color: 0xff0055, roughness: 0.2, metalness: 0.5 });
-    const carBody = new THREE.Mesh(carBodyGeo, carBodyMat);
-    carBody.position.y = 0.6;
+    const carBody = new THREE.Mesh(
+      new THREE.BoxGeometry(carWidth, carHeight, carLength),
+      new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.2, metalness: 0.3 })
+    );
+    carBody.position.y = 0.8;
+    carBody.castShadow = true;
     carGroup.add(carBody);
 
-    // Cabin
-    const cabinGeo = new THREE.BoxGeometry(1.8, 0.6, 2.2);
-    const cabinMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, roughness: 0.1, transparent: true, opacity: 0.7 });
-    const cabin = new THREE.Mesh(cabinGeo, cabinMat);
-    cabin.position.set(0, 1.2, -0.2);
+    // Cabin Glass
+    const cabin = new THREE.Mesh(
+      new THREE.BoxGeometry(1.8, 0.7, 2.2),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1 })
+    );
+    cabin.position.set(0, 1.4, -0.2);
     carGroup.add(cabin);
 
-    // Wheels
-    const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.4, 16);
-    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
-    
-    const wheelPositions = [
-      [-1.1, 0.4, 1.3], [1.1, 0.4, 1.3],
-      [-1.1, 0.4, -1.3], [1.1, 0.4, -1.3]
-    ];
-
-    wheelPositions.forEach(pos => {
-      const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-      wheel.rotation.z = Math.PI / 2;
-      wheel.position.set(...pos);
-      carGroup.add(wheel);
-    });
-
+    carGroup.position.set(0, 0, 20);
     scene.add(carGroup);
 
-    // --- CAR PHYSICS & CONTROLS ---
+    // --- VEHICLE CONTROLS & PHYSICS ---
     let speed = 0;
-    let maxSpeed = 1.8;
-    let accel = 0.03;
-    let friction = 0.96;
-    let turnSpeed = 0.035;
-    let angle = 0;
+    let maxSpeed = 0.4;
+    let accel = 0.012;
+    let friction = 0.95;
+    let turnAngle = 0;
+    let carAngle = 0;
+    let isGameOver = false;
 
     const keys = {};
     window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
     window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
+    // Collision Detection Box
+    const carBBox = new THREE.Box3();
+
+    function checkWin() {
+      const dist = Math.hypot(carGroup.position.x - targetX, carGroup.position.z - targetZ);
+      const angleDiff = Math.abs((carAngle % Math.PI));
+
+      // Check if stopped inside the box aligned properly
+      if (dist < 1.2 && Math.abs(speed) < 0.02 && (angleDiff < 0.3 || Math.abs(angleDiff - Math.PI) < 0.3)) {
+        isGameOver = true;
+        document.getElementById('message-box').style.display = 'block';
+      }
+    }
+
     // --- GAME LOOP ---
     function animate() {
       requestAnimationFrame(animate);
 
-      // Driving Physics
-      if (keys['w'] || keys['arrowup']) speed = Math.min(speed + accel, maxSpeed);
-      if (keys['s'] || keys['arrowdown']) speed = Math.max(speed - accel, -maxSpeed * 0.5);
+      if (!isGameOver) {
+        // Accelerate & Reverse
+        if (keys['w'] || keys['arrowup']) speed = Math.min(speed + accel, maxSpeed);
+        if (keys['s'] || keys['arrowdown']) speed = Math.max(speed - accel, -maxSpeed * 0.5);
 
-      speed *= friction;
+        speed *= friction;
 
-      if (Math.abs(speed) > 0.01) {
-        const dir = speed > 0 ? 1 : -1;
-        if (keys['a'] || keys['arrowleft']) angle += turnSpeed * dir;
-        if (keys['d'] || keys['arrowright']) angle -= turnSpeed * dir;
+        // Steering Physics
+        if (Math.abs(speed) > 0.005) {
+          const dir = speed > 0 ? 1 : -1;
+          if (keys['a'] || keys['arrowleft']) carAngle += 0.03 * dir;
+          if (keys['d'] || keys['arrowright']) carAngle -= 0.03 * dir;
+        }
+
+        carGroup.rotation.y = carAngle;
+        carGroup.position.x += Math.sin(carAngle) * speed;
+        carGroup.position.z += Math.cos(carAngle) * speed;
+
+        // Update Collision Bounding Box
+        carBBox.setFromObject(carGroup);
+
+        // Check Wall/Traffic Collisions
+        for (let obs of obstacles) {
+          if (carBBox.intersectsBox(obs)) {
+            speed = -speed * 0.5; // Bounce back
+            document.getElementById('status-text').innerText = "CRASH! Adjust your maneuver!";
+            document.getElementById('status-text').style.color = "#ef4444";
+          }
+        }
+
+        checkWin();
       }
 
-      carGroup.rotation.y = angle;
-      carGroup.position.x += Math.sin(angle) * speed;
-      carGroup.position.z += Math.cos(angle) * speed;
-
-      // Bound car to city limits
-      carGroup.position.x = Math.max(-280, Math.min(280, carGroup.position.x));
-      carGroup.position.z = Math.max(-280, Math.min(280, carGroup.position.z));
-
-      // Third-Person Camera Follow
-      const camOffset = new THREE.Vector3(0, 4, -10).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+      // Smooth Third-Person Camera Follow
+      const camOffset = new THREE.Vector3(0, 6, -12).applyAxisAngle(new THREE.Vector3(0, 1, 0), carAngle);
       camera.position.copy(carGroup.position).add(camOffset);
       camera.lookAt(carGroup.position.clone().add(new THREE.Vector3(0, 1, 0)));
-
-      // HUD Speedometer
-      const displaySpeed = Math.floor(Math.abs(speed) * 80);
-      document.getElementById('speedometer').innerText = `${displaySpeed.toString().padStart(3, '0')} MPH`;
 
       renderer.render(scene, camera);
     }
