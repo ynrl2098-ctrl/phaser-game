@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JS Arcade Racer</title>
+  <title>F1 Arcade Racer</title>
   <style>
     body {
       margin: 0;
-      background: #222;
+      background: #111;
       color: #fff;
       font-family: sans-serif;
       display: flex;
@@ -19,11 +19,12 @@
     #gameCanvas {
       background: #333;
       border: 4px solid #fff;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      box-shadow: 0 0 20px rgba(0,0,0,0.8);
     }
     .hud {
       margin-bottom: 10px;
       font-size: 1.2rem;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -38,14 +39,24 @@
 
     let score = 0;
     let gameOver = false;
+    let roadOffset = 0;
 
     const player = {
       x: 185,
       y: 500,
-      width: 30,
-      height: 50,
-      speed: 5
+      width: 34,
+      height: 60,
+      speed: 6
     };
+
+    const VEHICLE_TYPES = [
+      { type: 'cycle', width: 14, height: 28, color: '#e67e22' },
+      { type: 'bike',  width: 16, height: 32, color: '#9b59b6' },
+      { type: 'car',   width: 32, height: 50, color: '#3498db' },
+      { type: 'van',   width: 34, height: 55, color: '#2ecc71' },
+      { type: 'bus',   width: 38, height: 80, color: '#f1c40f' },
+      { type: 'truck', width: 40, height: 90, color: '#e74c3c' }
+    ];
 
     const obstacles = [];
     const keys = {};
@@ -54,32 +65,159 @@
     window.addEventListener('keyup', e => keys[e.key] = false);
 
     function spawnObstacle() {
-      if (Math.random() < 0.03) {
+      if (Math.random() < 0.025) {
+        const template = VEHICLE_TYPES[Math.floor(Math.random() * VEHICLE_TYPES.length)];
         obstacles.push({
-          x: Math.random() * (canvas.width - 30),
-          y: -50,
-          width: 30,
-          height: 50,
-          speed: 3 + Math.random() * 3
+          x: Math.random() * (canvas.width - template.width),
+          y: -100,
+          width: template.width,
+          height: template.height,
+          speed: 2 + Math.random() * 3,
+          type: template.type,
+          color: template.color
         });
+      }
+    }
+
+    function drawF1Car(x, y, w, h) {
+      // Rear Wing
+      ctx.fillStyle = '#111';
+      ctx.fillRect(x + 2, y + h - 8, w - 4, 6);
+      
+      // Rear Tires
+      ctx.fillStyle = '#000';
+      ctx.fillRect(x - 3, y + h - 18, 7, 14);
+      ctx.fillRect(x + w - 4, y + h - 18, 7, 14);
+      
+      // Main Body
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(x + w * 0.25, y + 12, w * 0.5, h - 20);
+      
+      // Sidepods
+      ctx.fillRect(x + 4, y + 22, w - 8, 20);
+
+      // Nose Cone
+      ctx.beginPath();
+      ctx.moveTo(x + w * 0.25, y + 12);
+      ctx.lineTo(x + w * 0.5, y);
+      ctx.lineTo(x + w * 0.75, y + 12);
+      ctx.fill();
+
+      // Front Wing
+      ctx.fillStyle = '#111';
+      ctx.fillRect(x, y, w, 5);
+
+      // Front Tires
+      ctx.fillStyle = '#000';
+      ctx.fillRect(x - 2, y + 4, 6, 12);
+      ctx.fillRect(x + w - 4, y + 4, 6, 12);
+
+      // Cockpit & Driver Helmet
+      ctx.fillStyle = '#111';
+      ctx.fillRect(x + w * 0.35, y + 20, w * 0.3, 14);
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(x + w * 0.5, y + 25, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawTrafficVehicle(obs) {
+      const { x, y, width: w, height: h, type, color } = obs;
+
+      switch(type) {
+        case 'cycle':
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(x + w/2, y);
+          ctx.lineTo(x + w/2, y + h);
+          ctx.stroke();
+          // Wheels
+          ctx.fillStyle = '#000';
+          ctx.fillRect(x + w/2 - 2, y, 4, 6);
+          ctx.fillRect(x + w/2 - 2, y + h - 6, 4, 6);
+          // Handlebars
+          ctx.fillRect(x, y + 8, w, 2);
+          break;
+
+        case 'bike':
+          // Body & Fairing
+          ctx.fillStyle = color;
+          ctx.fillRect(x + 3, y + 6, w - 6, h - 12);
+          // Tires
+          ctx.fillStyle = '#000';
+          ctx.fillRect(x + 5, y, w - 10, 6);
+          ctx.fillRect(x + 5, y + h - 6, w - 10, 6);
+          // Rider
+          ctx.fillStyle = '#333';
+          ctx.fillRect(x + 4, y + 12, w - 8, 10);
+          break;
+
+        case 'car':
+          ctx.fillStyle = color;
+          ctx.fillRect(x, y, w, h);
+          // Windshields
+          ctx.fillStyle = '#81e6d9';
+          ctx.fillRect(x + 3, y + 10, w - 6, 8);
+          ctx.fillRect(x + 3, y + h - 14, w - 6, 6);
+          // Lights
+          ctx.fillStyle = '#ff4d4d';
+          ctx.fillRect(x + 2, y + h - 3, 5, 3);
+          ctx.fillRect(x + w - 7, y + h - 3, 5, 3);
+          break;
+
+        case 'van':
+          ctx.fillStyle = color;
+          ctx.fillRect(x, y, w, h);
+          // Roof grid/details
+          ctx.fillStyle = '#111';
+          ctx.fillRect(x + 4, y + 8, w - 8, 8); // Front Windshield
+          ctx.fillStyle = 'rgba(0,0,0,0.2)';
+          ctx.fillRect(x + 2, y + 20, w - 4, h - 24);
+          break;
+
+        case 'bus':
+          ctx.fillStyle = color;
+          ctx.fillRect(x, y, w, h);
+          // Windows
+          ctx.fillStyle = '#333';
+          ctx.fillRect(x + 2, y + 6, w - 4, 6); // Front glass
+          for (let i = 18; i < h - 10; i += 12) {
+            ctx.fillRect(x + 1, y + i, 4, 8);
+            ctx.fillRect(x + w - 5, y + i, 4, 8);
+          }
+          break;
+
+        case 'truck':
+          // Cabin
+          ctx.fillStyle = color;
+          ctx.fillRect(x + 2, y, w - 4, 25);
+          ctx.fillStyle = '#81e6d9';
+          ctx.fillRect(x + 5, y + 5, w - 10, 6);
+          // Cargo Bed / Container
+          ctx.fillStyle = '#718096';
+          ctx.fillRect(x, y + 27, w, h - 27);
+          break;
       }
     }
 
     function update() {
       if (gameOver) return;
 
+      // Animate road
+      roadOffset = (roadOffset + 5) % 40;
+
       // Controls
       if ((keys['ArrowLeft'] || keys['a']) && player.x > 0) player.x -= player.speed;
       if ((keys['ArrowRight'] || keys['d']) && player.x < canvas.width - player.width) player.x += player.speed;
 
-      // Obstacles logic
       spawnObstacle();
 
       for (let i = 0; i < obstacles.length; i++) {
         let obs = obstacles[i];
         obs.y += obs.speed;
 
-        // Collision detection
+        // Collision Check (AABB)
         if (
           player.x < obs.x + obs.width &&
           player.x + player.width > obs.x &&
@@ -87,11 +225,13 @@
           player.y + player.height > obs.y
         ) {
           gameOver = true;
-          alert('Game Over! Final Score: ' + score);
-          document.location.reload();
+          setTimeout(() => {
+            alert('Crash! Final Score: ' + score);
+            document.location.reload();
+          }, 10);
         }
 
-        // Remove off-screen items & update score
+        // Score & cleanup
         if (obs.y > canvas.height) {
           obstacles.splice(i, 1);
           score += 10;
@@ -104,23 +244,30 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw road markings
+      // Road background & moving lanes
+      ctx.fillStyle = '#222';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
       ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 4;
       ctx.setLineDash([20, 20]);
+      ctx.lineDashOffset = -roadOffset;
+      
       ctx.beginPath();
-      ctx.moveTo(canvas.width / 2, 0);
-      ctx.lineTo(canvas.width / 2, canvas.height);
+      ctx.moveTo(canvas.width / 3, 0);
+      ctx.lineTo(canvas.width / 3, canvas.height);
+      ctx.moveTo((canvas.width / 3) * 2, 0);
+      ctx.lineTo((canvas.width / 3) * 2, canvas.height);
       ctx.stroke();
 
-      // Draw Player
-      ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(player.x, player.y, player.width, player.height);
+      // Reset dash offset for vehicle details
+      ctx.setLineDash([]);
 
-      // Draw Obstacles
-      ctx.fillStyle = '#f1c40f';
-      obstacles.forEach(obs => {
-        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-      });
+      // Draw Player F1 Car
+      drawF1Car(player.x, player.y, player.width, player.height);
+
+      // Draw Traffic
+      obstacles.forEach(drawTrafficVehicle);
     }
 
     function loop() {
