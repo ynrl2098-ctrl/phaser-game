@@ -3,296 +3,313 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Car Parking Simulator</title>
+  <title>Mr. Mario Bros - Classic Edition</title>
   <style>
     body {
       margin: 0;
-      overflow: hidden;
-      background: #000;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      user-select: none;
-    }
-    #game-container {
-      width: 100vw;
-      height: 100vh;
-      position: absolute;
-    }
-
-    /* HUD Elements */
-    .hud {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 12px 20px;
-      border-radius: 8px;
+      padding: 0;
+      background: #0f0f1b;
       color: #fff;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
     }
-    .hud h2 { margin: 0 0 5px 0; font-size: 18px; color: #38bdf8; }
-    .status { font-weight: bold; color: #facc15; font-size: 14px; }
-
-    .controls-panel {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 12px 18px;
-      border-radius: 8px;
-      color: #94a3b8;
-      font-size: 13px;
-      line-height: 1.6;
+    h1 {
+      margin: 10px 0 5px;
+      color: #f8d820;
+      text-shadow: 2px 2px #d82800;
+      font-size: 28px;
     }
-    .controls-panel b { color: #fff; }
-
-    /* Victory / Game Over Overlay */
-    #message-box {
-      display: none;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(15, 23, 42, 0.95);
-      border: 2px solid #38bdf8;
-      padding: 30px 50px;
-      border-radius: 12px;
-      text-align: center;
-      color: #fff;
-      box-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
-    }
-    #message-box h1 { margin: 0 0 10px 0; font-size: 32px; }
-    #message-box p { margin: 0 0 20px 0; color: #94a3b8; }
-    #message-box button {
-      background: #38bdf8;
-      color: #0f172a;
-      border: none;
-      padding: 10px 24px;
-      font-weight: bold;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 16px;
+    p { margin: 0 0 15px; color: #a8a8a8; font-size: 14px; }
+    canvas {
+      border: 4px solid #fff;
+      background: #5c94fc;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      image-rendering: pixelated; /* Crisp pixel art rendering */
     }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-  <div id="game-container"></div>
 
-  <div class="hud">
-    <h2>PARKING CHALLENGE</h2>
-    <div class="status" id="status-text">Park inside the glowing spot!</div>
-  </div>
-
-  <div class="controls-panel">
-    <b>CONTROLS:</b><br>
-    W / Up Arrow: Accelerate<br>
-    S / Down Arrow: Reverse / Brake<br>
-    A / D / Left / Right: Turn Wheels
-  </div>
-
-  <div id="message-box">
-    <h1 id="msg-title">PARKED PERFECTLY!</h1>
-    <p id="msg-desc">You successfully completed the parking maneuver.</p>
-    <button onclick="location.reload()">PLAY AGAIN</button>
-  </div>
+  <h1>SUPER MARIO - PIXEL EDITION</h1>
+  <p><strong>A / D</strong> or <strong>Arrows</strong> to move | <strong>Space / W</strong> to jump | <strong>Shift</strong> to run</p>
+  <canvas id="gameCanvas" width="800" height="400"></canvas>
 
   <script>
-    // --- SCENE SETUP ---
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0f172a);
-    scene.fog = new THREE.FogExp2(0x0f172a, 0.015);
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    document.getElementById('game-container').appendChild(renderer.domElement);
+    // Enable crisp pixel art scales
+    ctx.imageSmoothingEnabled = false;
 
-    // --- LIGHTING ---
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(ambientLight);
+    // Physics Settings
+    const gravity = 0.45;
+    const friction = 0.85;
 
-    const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    sunLight.position.set(40, 60, 20);
-    sunLight.castShadow = true;
-    scene.add(sunLight);
+    // Player State
+    const player = {
+      x: 50,
+      y: 300,
+      width: 24,
+      height: 32,
+      vx: 0,
+      vy: 0,
+      speed: 0.6,
+      maxSpeed: 4,
+      jumpForce: -10.5,
+      grounded: false,
+      facing: 'right',
+      score: 0,
+      coins: 0
+    };
 
-    // --- ENVIRONMENT & PARKING LOT ---
-    const lotSize = 100;
-    const groundGeo = new THREE.PlaneGeometry(lotSize, lotSize);
-    const groundMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    scene.add(ground);
+    // World Elements
+    const platforms = [
+      { x: 0, y: 360, width: 800, height: 40, type: 'ground' },
+      { x: 120, y: 260, width: 96, height: 32, type: 'brick' },
+      { x: 300, y: 190, width: 128, height: 32, type: 'brick' },
+      { x: 520, y: 260, width: 64, height: 96, type: 'pipe' },
+      { x: 660, y: 200, width: 96, height: 32, type: 'brick' }
+    ];
 
-    // Perimeter Barriers
-    const obstacles = [];
-    const barrierMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 });
-    
-    function createWall(x, z, w, d) {
-      const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 2, d), barrierMat);
-      wall.position.set(x, 1, z);
-      wall.castShadow = true;
-      wall.receiveShadow = true;
-      scene.add(wall);
-      obstacles.push(new THREE.Box3().setFromObject(wall));
-    }
+    const coins = [
+      { x: 140, y: 220, animationFrame: 0, collected: false },
+      { x: 180, y: 220, animationFrame: 0, collected: false },
+      { x: 330, y: 150, animationFrame: 0, collected: false },
+      { x: 360, y: 150, animationFrame: 0, collected: false },
+      { x: 390, y: 150, animationFrame: 0, collected: false },
+      { x: 680, y: 160, animationFrame: 0, collected: false }
+    ];
 
-    // Border Walls
-    createWall(0, -lotSize/2, lotSize, 2);
-    createWall(0, lotSize/2, lotSize, 2);
-    createWall(-lotSize/2, 0, 2, lotSize);
-    createWall(lotSize/2, 0, 2, lotSize);
-
-    // Parked Traffic Cars (Obstacles)
-    function createParkedCar(x, z, rotY) {
-      const group = new THREE.Group();
-      const body = new THREE.Mesh(
-        new THREE.BoxGeometry(2.2, 1.2, 4.4),
-        new THREE.MeshStandardMaterial({ color: Math.random() > 0.5 ? 0x64748b : 0x0284c7 })
-      );
-      body.position.y = 0.8;
-      body.castShadow = true;
-      group.add(body);
-      group.position.set(x, 0, z);
-      group.rotation.y = rotY;
-      scene.add(group);
-      
-      obstacles.push(new THREE.Box3().setFromObject(body));
-    }
-
-    // Row of parked cars
-    createParkedCar(-15, -10, 0);
-    createParkedCar(-10, -10, 0);
-    createParkedCar(10, -10, 0);
-    createParkedCar(15, -10, 0);
-
-    // --- TARGET PARKING BAY ---
-    const targetX = 0, targetZ = -10;
-    const targetSize = { w: 3.5, d: 5.5 };
-
-    // Glowing Target Spot
-    const targetGeo = new THREE.PlaneGeometry(targetSize.w, targetSize.d);
-    const targetMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
-    const targetMesh = new THREE.Mesh(targetGeo, targetMat);
-    targetMesh.rotation.x = -Math.PI / 2;
-    targetMesh.position.set(targetX, 0.05, targetZ);
-    scene.add(targetMesh);
-
-    // Yellow Parking Bay Lines
-    const lineMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
-    const leftLine = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 6), lineMat);
-    leftLine.rotation.x = -Math.PI / 2;
-    leftLine.position.set(targetX - 2, 0.06, targetZ);
-    const rightLine = leftLine.clone();
-    rightLine.position.x = targetX + 2;
-    scene.add(leftLine, rightLine);
-
-    // --- PLAYER CAR ---
-    const carGroup = new THREE.Group();
-    const carWidth = 2.2, carHeight = 1.2, carLength = 4.4;
-
-    const carBody = new THREE.Mesh(
-      new THREE.BoxGeometry(carWidth, carHeight, carLength),
-      new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.2, metalness: 0.3 })
-    );
-    carBody.position.y = 0.8;
-    carBody.castShadow = true;
-    carGroup.add(carBody);
-
-    // Cabin Glass
-    const cabin = new THREE.Mesh(
-      new THREE.BoxGeometry(1.8, 0.7, 2.2),
-      new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1 })
-    );
-    cabin.position.set(0, 1.4, -0.2);
-    carGroup.add(cabin);
-
-    carGroup.position.set(0, 0, 20);
-    scene.add(carGroup);
-
-    // --- VEHICLE CONTROLS & PHYSICS ---
-    let speed = 0;
-    let maxSpeed = 0.4;
-    let accel = 0.012;
-    let friction = 0.95;
-    let turnAngle = 0;
-    let carAngle = 0;
-    let isGameOver = false;
-
+    // Input Listeners
     const keys = {};
-    window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
 
-    // Collision Detection Box
-    const carBBox = new THREE.Box3();
+    // Procedural Pixel Art Renderers
+    function drawMario(x, y, facing) {
+      ctx.save();
+      if (facing === 'left') {
+        ctx.translate(x + player.width, y);
+        ctx.scale(-1, 1);
+        x = 0;
+        y = 0;
+      }
 
-    function checkWin() {
-      const dist = Math.hypot(carGroup.position.x - targetX, carGroup.position.z - targetZ);
-      const angleDiff = Math.abs((carAngle % Math.PI));
+      // Cap
+      ctx.fillStyle = '#f83800';
+      ctx.fillRect(x + 6, y, 14, 6);
+      ctx.fillRect(x + 6, y + 4, 18, 4);
 
-      // Check if stopped inside the box aligned properly
-      if (dist < 1.2 && Math.abs(speed) < 0.02 && (angleDiff < 0.3 || Math.abs(angleDiff - Math.PI) < 0.3)) {
-        isGameOver = true;
-        document.getElementById('message-box').style.display = 'block';
+      // Face & Ear
+      ctx.fillStyle = '#fcb088';
+      ctx.fillRect(x + 4, y + 8, 16, 8);
+      ctx.fillRect(x + 2, y + 10, 4, 4);
+
+      // Eye & Mustache
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(x + 14, y + 8, 2, 4); // Eye
+      ctx.fillRect(x + 8, y + 14, 12, 4); // Mustache
+
+      // Hair
+      ctx.fillStyle = '#6c3c00';
+      ctx.fillRect(x + 4, y + 8, 4, 4);
+
+      // Shirt
+      ctx.fillStyle = '#f83800';
+      ctx.fillRect(x + 4, y + 18, 16, 8);
+
+      // Overalls
+      ctx.fillStyle = '#0028c8';
+      ctx.fillRect(x + 6, y + 20, 12, 10);
+      ctx.fillRect(x + 4, y + 24, 16, 6);
+
+      // Buttons
+      ctx.fillStyle = '#fcb088';
+      ctx.fillRect(x + 6, y + 22, 2, 2);
+      ctx.fillRect(x + 14, y + 22, 2, 2);
+
+      // Shoes
+      ctx.fillStyle = '#6c3c00';
+      ctx.fillRect(x + 2, y + 28, 8, 4);
+      ctx.fillRect(x + 14, y + 28, 8, 4);
+
+      ctx.restore();
+    }
+
+    function drawBrick(x, y, width, height) {
+      for (let i = 0; i < width; i += 16) {
+        for (let j = 0; j < height; j += 16) {
+          ctx.fillStyle = '#c84c0c';
+          ctx.fillRect(x + i, y + j, 16, 16);
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(x + i, y + j, 16, 1);
+          ctx.fillRect(x + i, y + j, 1, 16);
+          ctx.fillStyle = '#fcb088';
+          ctx.fillRect(x + i + 1, y + j + 1, 14, 1);
+          ctx.fillRect(x + i + 1, y + j + 1, 1, 14);
+        }
       }
     }
 
-    // --- GAME LOOP ---
-    function animate() {
-      requestAnimationFrame(animate);
+    function drawPipe(x, y, width, height) {
+      // Pipe Body
+      ctx.fillStyle = '#00a800';
+      ctx.fillRect(x + 4, y + 16, width - 8, height - 16);
+      ctx.fillStyle = '#a8e420';
+      ctx.fillRect(x + 8, y + 16, 4, height - 16);
 
-      if (!isGameOver) {
-        // Accelerate & Reverse
-        if (keys['w'] || keys['arrowup']) speed = Math.min(speed + accel, maxSpeed);
-        if (keys['s'] || keys['arrowdown']) speed = Math.max(speed - accel, -maxSpeed * 0.5);
+      // Pipe Top / Rim
+      ctx.fillStyle = '#00a800';
+      ctx.fillRect(x, y, width, 16);
+      ctx.fillStyle = '#a8e420';
+      ctx.fillRect(x + 4, y, 4, 16);
 
-        speed *= friction;
+      // Black Outline Highlights
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, width, 16);
+      ctx.strokeRect(x + 4, y + 16, width - 8, height - 16);
+    }
 
-        // Steering Physics
-        if (Math.abs(speed) > 0.005) {
-          const dir = speed > 0 ? 1 : -1;
-          if (keys['a'] || keys['arrowleft']) carAngle += 0.03 * dir;
-          if (keys['d'] || keys['arrowright']) carAngle -= 0.03 * dir;
+    function drawGround(x, y, width, height) {
+      // Dirt texture
+      ctx.fillStyle = '#c84c0c';
+      ctx.fillRect(x, y, width, height);
+      // Top Grass
+      ctx.fillStyle = '#00a800';
+      ctx.fillRect(x, y, width, 8);
+      ctx.fillStyle = '#a8e420';
+      ctx.fillRect(x, y, width, 2);
+    }
+
+    function drawCoin(x, y, tick) {
+      const frame = Math.floor(tick / 10) % 4;
+      const widths = [12, 8, 4, 8];
+      const offset = (12 - widths[frame]) / 2;
+
+      ctx.fillStyle = '#f8d820';
+      ctx.fillRect(x + offset, y, widths[frame], 14);
+      ctx.fillStyle = '#fcb088';
+      ctx.fillRect(x + offset + 2, y + 2, Math.max(1, widths[frame] - 4), 10);
+    }
+
+    let globalTick = 0;
+
+    function update() {
+      globalTick++;
+
+      // Speed Modifier (Running)
+      const currentMaxSpeed = keys['ShiftLeft'] || keys['ShiftRight'] ? player.maxSpeed * 1.4 : player.maxSpeed;
+
+      // Horizontal Controls with Momentum
+      if (keys['ArrowRight'] || keys['KeyD']) {
+        if (player.vx < currentMaxSpeed) player.vx += player.speed;
+        player.facing = 'right';
+      } else if (keys['ArrowLeft'] || keys['KeyA']) {
+        if (player.vx > -currentMaxSpeed) player.vx -= player.speed;
+        player.facing = 'left';
+      } else {
+        player.vx *= friction;
+      }
+
+      // Jump Impulse
+      if ((keys['Space'] || keys['ArrowUp'] || keys['KeyW']) && player.grounded) {
+        player.vy = player.jumpForce;
+        player.grounded = false;
+      }
+
+      // Apply Gravity
+      player.vy += gravity;
+
+      // Position Updates
+      player.x += player.vx;
+      player.y += player.vy;
+
+      // Screen Boundaries
+      if (player.x < 0) player.x = 0;
+      if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+      // Platform Collisions
+      player.grounded = false;
+      platforms.forEach(plat => {
+        if (
+          player.x < plat.x + plat.width &&
+          player.x + player.width > plat.x &&
+          player.y + player.height <= plat.y + player.vy &&
+          player.y + player.height + player.vy >= plat.y
+        ) {
+          player.vy = 0;
+          player.y = plat.y - player.height;
+          player.grounded = true;
         }
+      });
 
-        carGroup.rotation.y = carAngle;
-        carGroup.position.x += Math.sin(carAngle) * speed;
-        carGroup.position.z += Math.cos(carAngle) * speed;
-
-        // Update Collision Bounding Box
-        carBBox.setFromObject(carGroup);
-
-        // Check Wall/Traffic Collisions
-        for (let obs of obstacles) {
-          if (carBBox.intersectsBox(obs)) {
-            speed = -speed * 0.5; // Bounce back
-            document.getElementById('status-text').innerText = "CRASH! Adjust your maneuver!";
-            document.getElementById('status-text').style.color = "#ef4444";
+      // Coin Pickups
+      coins.forEach(coin => {
+        if (!coin.collected) {
+          if (
+            player.x < coin.x + 12 &&
+            player.x + player.width > coin.x &&
+            player.y < coin.y + 14 &&
+            player.y + player.height > coin.y
+          ) {
+            coin.collected = true;
+            player.score += 200;
+            player.coins += 1;
           }
         }
-
-        checkWin();
-      }
-
-      // Smooth Third-Person Camera Follow
-      const camOffset = new THREE.Vector3(0, 6, -12).applyAxisAngle(new THREE.Vector3(0, 1, 0), carAngle);
-      camera.position.copy(carGroup.position).add(camOffset);
-      camera.lookAt(carGroup.position.clone().add(new THREE.Vector3(0, 1, 0)));
-
-      renderer.render(scene, camera);
+      });
     }
 
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    function render() {
+      // Clear Background (Sky)
+      ctx.fillStyle = '#5c94fc';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    animate();
+      // Render Decorative Clouds
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(100, 80, 64, 24);
+      ctx.fillRect(450, 60, 80, 24);
+
+      // Render Platforms
+      platforms.forEach(plat => {
+        if (plat.type === 'ground') drawGround(plat.x, plat.y, plat.width, plat.height);
+        else if (plat.type === 'brick') drawBrick(plat.x, plat.y, plat.width, plat.height);
+        else if (plat.type === 'pipe') drawPipe(plat.x, plat.y, plat.width, plat.height);
+      });
+
+      // Render Animated Coins
+      coins.forEach(coin => {
+        if (!coin.collected) drawCoin(coin.x, coin.y, globalTick);
+      });
+
+      // Render Mario
+      drawMario(player.x, player.y, player.facing);
+
+      // Render Classic HUD
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px "Courier New", monospace';
+      ctx.fillText(`MARIO`, 40, 30);
+      ctx.fillText(`${String(player.score).padStart(6, '0')}`, 40, 50);
+
+      ctx.fillText(`COINS`, 220, 30);
+      ctx.fillText(`* ${String(player.coins).padStart(2, '0')}`, 220, 50);
+
+      ctx.fillText(`WORLD`, 400, 30);
+      ctx.fillText(`1-1`, 410, 50);
+    }
+
+    function gameLoop() {
+      update();
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
   </script>
 </body>
 </html>
