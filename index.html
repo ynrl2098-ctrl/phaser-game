@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>F1 3D Cockpit Racing Simulator</title>
+  <title>Vice City 3D Sandbox</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
       background: #000;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Trebuchet MS', 'Arial', sans-serif;
       user-select: none;
     }
     #game-container {
@@ -18,262 +18,217 @@
       position: absolute;
     }
 
-    /* F1 Broadcast Leaderboard (Top Left) */
-    .leaderboard {
+    /* Vice City 80s Style HUD */
+    .hud {
       position: absolute;
       top: 20px;
-      left: 20px;
-      background: rgba(15, 15, 20, 0.85);
-      border-left: 4px solid #e10600;
-      padding: 10px 14px;
-      color: #fff;
-      font-size: 13px;
-      font-weight: 700;
-      border-radius: 4px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    }
-    .driver-row {
-      display: flex;
-      justify-content: space-between;
-      width: 170px;
-      margin: 4px 0;
-      padding: 2px 4px;
-    }
-    .driver-row.player { background: rgba(225, 6, 0, 0.3); border-radius: 2px; }
-
-    /* F1 Telemetry HUD (Bottom Right) */
-    .telemetry {
-      position: absolute;
-      bottom: 30px;
-      right: 30px;
-      background: rgba(10, 10, 15, 0.9);
-      border: 1px solid rgba(255,255,255,0.1);
-      padding: 15px 25px;
-      border-radius: 8px;
-      color: #fff;
+      right: 20px;
       text-align: right;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.7);
+      color: #ff007f;
+      text-shadow: 2px 2px 0px #00f0ff, -1px -1px 0px #000;
     }
-    .gear { font-size: 38px; color: #facc15; font-weight: 900; }
-    .speed { font-size: 28px; font-weight: 800; color: #fff; }
-    .speed-unit { font-size: 12px; color: #888; }
-    .rpm-bar { width: 140px; height: 6px; background: #222; margin-top: 8px; border-radius: 3px; overflow: hidden; }
-    .rpm-fill { width: 70%; height: 100%; background: linear-gradient(90deg, #22c55e, #facc15, #ef4444); }
+    .title {
+      font-size: 28px;
+      font-weight: 900;
+      font-style: italic;
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+    }
+    .stats {
+      font-size: 22px;
+      font-weight: bold;
+      color: #facc15;
+      text-shadow: 2px 2px 0px #000;
+    }
 
-    /* Track Minimap (Bottom Left) */
-    #minimap {
+    .controls-hint {
       position: absolute;
       bottom: 20px;
       left: 20px;
+      color: #00f0ff;
       background: rgba(0,0,0,0.6);
-      border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.2);
+      padding: 10px 15px;
+      border: 1px solid #ff007f;
+      border-radius: 4px;
+      font-size: 14px;
     }
   </style>
-  <!-- Three.js 3D Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
   <div id="game-container"></div>
 
-  <!-- F1 HUD Overlay -->
-  <div class="leaderboard">
-    <div style="color:#aaa; font-size:10px; margin-bottom:5px;">POS &nbsp; DRIVER</div>
-    <div class="driver-row"><span>1 HAMILTON</span> <span style="color:#22c55e;">LEADER</span></div>
-    <div class="driver-row"><span>2 VERSTAPPEN</span> <span style="color:#888;">+0.421</span></div>
-    <div class="driver-row player"><span>3 YOU (F1)</span> <span style="color:#facc15;">INTERVAL</span></div>
-    <div class="driver-row"><span>4 NORRIS</span> <span style="color:#888;">+1.205</span></div>
-    <div class="driver-row"><span>5 LECLERC</span> <span style="color:#888;">+1.890</span></div>
+  <div class="hud">
+    <div class="title">VICE CITY 3D</div>
+    <div class="stats" id="speedometer">000 MPH</div>
   </div>
 
-  <div class="telemetry">
-    <div class="gear" id="gearDisplay">4</div>
-    <div class="speed"><span id="speedDisplay">184</span> <span class="speed-unit">KM/H</span></div>
-    <div class="rpm-bar"><div class="rpm-fill" id="rpmDisplay"></div></div>
+  <div class="controls-hint">
+    <b>CONTROLS:</b><br>
+    W / Up Arrow: Accelerate<br>
+    S / Down Arrow: Reverse / Brake<br>
+    A / D / Left / Right: Steering
   </div>
-
-  <canvas id="minimap" width="120" height="120"></canvas>
 
   <script>
-    // --- 3D SCENE SETUP ---
-    const container = document.getElementById('game-container');
+    // --- SCENE SETUP ---
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87ceeb); // Realistic Sky
-    scene.fog = new THREE.FogExp2(0x87ceeb, 0.003);
+    scene.background = new THREE.Color(0x1a0b2e); // Deep purple sunset
+    scene.fog = new THREE.FogExp2(0x1a0b2e, 0.008);
 
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
+    document.getElementById('game-container').appendChild(renderer.domElement);
 
-    // --- LIGHTING ---
-    const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    sunLight.position.set(100, 200, 50);
-    sunLight.castShadow = true;
-    scene.add(sunLight);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    // --- LIGHTS ---
+    const ambientLight = new THREE.AmbientLight(0xff007f, 0.6);
+    scene.add(ambientLight);
 
-    // --- TRACK ENVIRONMENT ---
-    const trackWidth = 24;
-    const roadGeometry = new THREE.PlaneGeometry(trackWidth, 2000);
-    const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
-    const road = new THREE.Mesh(roadGeometry, roadMaterial);
+    const dirLight = new THREE.DirectionalLight(0x00f0ff, 0.8);
+    dirLight.position.set(50, 100, 50);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    // --- 80s SUNSET ---
+    const sunGeo = new THREE.CircleGeometry(120, 32);
+    const sunMat = new THREE.MeshBasicMaterial({ color: 0xff5500, fog: false });
+    const sun = new THREE.Mesh(sunGeo, sunMat);
+    sun.position.set(0, 40, -400);
+    scene.add(sun);
+
+    // --- CITY ENVIRONMENT ---
+    const citySize = 600;
+    const gridHelper = new THREE.GridHelper(citySize, 60, 0xff007f, 0x00f0ff);
+    gridHelper.position.y = 0.1;
+    scene.add(gridHelper);
+
+    // Road Base
+    const roadGeo = new THREE.PlaneGeometry(citySize, citySize);
+    const roadMat = new THREE.MeshStandardMaterial({ color: 0x0a0a12, roughness: 0.8 });
+    const road = new THREE.Mesh(roadGeo, roadMat);
     road.rotation.x = -Math.PI / 2;
-    road.receiveShadow = true;
     scene.add(road);
 
-    // Grass Terrain
-    const grassGeo = new THREE.PlaneGeometry(1000, 2000);
-    const grassMat = new THREE.MeshStandardMaterial({ color: 0x15803d });
-    const grass = new THREE.Mesh(grassGeo, grassMat);
-    grass.rotation.x = -Math.PI / 2;
-    grass.position.y = -0.1;
-    scene.add(grass);
+    // Buildings & Palm Trees
+    const buildingGeo = new THREE.BoxGeometry(1, 1, 1);
+    
+    function createCity() {
+      for (let x = -250; x <= 250; x += 40) {
+        for (let z = -250; z <= 250; z += 40) {
+          if (Math.abs(x) < 30 && Math.abs(z) < 30) continue; // Keep spawn clear
 
-    // Red & White Curbs & Sponsor Barriers
-    for (let z = -1000; z < 1000; z += 20) {
-      const curbMat = new THREE.MeshBasicMaterial({ color: (Math.floor(z / 20) % 2 === 0) ? 0xef4444 : 0xffffff });
-      
-      const leftCurb = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.4, 20), curbMat);
-      leftCurb.position.set(-trackWidth/2 - 0.75, 0.1, z);
-      scene.add(leftCurb);
-
-      const rightCurb = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.4, 20), curbMat);
-      rightCurb.position.set(trackWidth/2 + 0.75, 0.1, z);
-      scene.add(rightCurb);
+          if (Math.random() > 0.3) {
+            // Neon Building
+            const height = 15 + Math.random() * 45;
+            const color = Math.random() > 0.5 ? 0x00f0ff : 0xff007f;
+            const mat = new THREE.MeshStandardMaterial({ color: 0x111122, emissive: color, emissiveIntensity: 0.2 });
+            const building = new THREE.Mesh(buildingGeo, mat);
+            building.scale.set(20, height, 20);
+            building.position.set(x, height / 2, z);
+            scene.add(building);
+          } else {
+            // Palm Tree Trunk
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3d2314 });
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 10), trunkMat);
+            trunk.position.set(x, 5, z);
+            
+            // Leaves
+            const leafMat = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+            const leaves = new THREE.Mesh(new THREE.ConeGeometry(4, 5, 5), leafMat);
+            leaves.position.set(x, 11, z);
+            
+            scene.add(trunk, leaves);
+          }
+        }
+      }
     }
+    createCity();
 
-    // Grandstands (Crowd Barriers)
-    const standGeo = new THREE.BoxGeometry(10, 15, 800);
-    const standMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
-    const leftStand = new THREE.Mesh(standGeo, standMat);
-    leftStand.position.set(-35, 7.5, 0);
-    const rightStand = new THREE.Mesh(standGeo, standMat);
-    rightStand.position.set(35, 7.5, 0);
-    scene.add(leftStand, rightStand);
+    // --- CAR CREATION (VICE CITY SPORTS CAR) ---
+    const carGroup = new THREE.Group();
 
-    // --- COCKPIT & HALO CREATION ---
-    const cockpitGroup = new THREE.Group();
+    // Body
+    const carBodyGeo = new THREE.BoxGeometry(2.2, 0.8, 4.5);
+    const carBodyMat = new THREE.MeshStandardMaterial({ color: 0xff0055, roughness: 0.2, metalness: 0.5 });
+    const carBody = new THREE.Mesh(carBodyGeo, carBodyMat);
+    carBody.position.y = 0.6;
+    carGroup.add(carBody);
+
+    // Cabin
+    const cabinGeo = new THREE.BoxGeometry(1.8, 0.6, 2.2);
+    const cabinMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, roughness: 0.1, transparent: true, opacity: 0.7 });
+    const cabin = new THREE.Mesh(cabinGeo, cabinMat);
+    cabin.position.set(0, 1.2, -0.2);
+    carGroup.add(cabin);
+
+    // Wheels
+    const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.4, 16);
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
     
-    // Halo Security Frame (Central Pillar + Curve)
-    const haloMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2, metalness: 0.8 });
-    
-    // Center Strut
-    const centerStrut = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.2), haloMat);
-    centerStrut.position.set(0, 0.2, -0.8);
-    cockpitGroup.add(centerStrut);
+    const wheelPositions = [
+      [-1.1, 0.4, 1.3], [1.1, 0.4, 1.3],
+      [-1.1, 0.4, -1.3], [1.1, 0.4, -1.3]
+    ];
 
-    // Halo Upper Arch
-    const haloArch = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.05, 8, 24, Math.PI), haloMat);
-    haloArch.rotation.x = Math.PI / 2;
-    haloArch.position.set(0, 0.7, -0.8);
-    cockpitGroup.add(haloArch);
+    wheelPositions.forEach(pos => {
+      const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(...pos);
+      carGroup.add(wheel);
+    });
 
-    // Front Tires Viewable from Cockpit
-    const tireMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.9 });
-    const tireGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.5, 24);
-    
-    const frontLeftTire = new THREE.Mesh(tireGeo, tireMat);
-    frontLeftTire.rotation.z = Math.PI / 2;
-    frontLeftTire.position.set(-1.8, -0.2, -2.2);
-    cockpitGroup.add(frontLeftTire);
+    scene.add(carGroup);
 
-    const frontRightTire = frontLeftTire.clone();
-    frontRightTire.position.x = 1.8;
-    cockpitGroup.add(frontRightTire);
+    // --- CAR PHYSICS & CONTROLS ---
+    let speed = 0;
+    let maxSpeed = 1.8;
+    let accel = 0.03;
+    let friction = 0.96;
+    let turnSpeed = 0.035;
+    let angle = 0;
 
-    scene.add(cockpitGroup);
-
-    // Position Camera inside Cockpit
-    camera.position.set(0, 1.1, 0);
-    cockpitGroup.position.copy(camera.position);
-
-    // --- AI RIVAL CARS ---
-    const rivalCars = [];
-    const carColors = [0xdc2626, 0x0284c7, 0xeab308, 0x16a34a];
-
-    for (let i = 0; i < 4; i++) {
-      const carMat = new THREE.MeshStandardMaterial({ color: carColors[i] });
-      const carBody = new THREE.Mesh(new THREE.BoxGeometry(2, 0.8, 4.5), carMat);
-      carBody.position.set((Math.random() - 0.5) * 16, 0.4, -50 - (i * 40));
-      carBody.castShadow = true;
-      scene.add(carBody);
-      rivalCars.push(carBody);
-    }
-
-    // --- GAME LOGIC & CONTROLS ---
-    let playerX = 0;
-    let currentSpeed = 140;
     const keys = {};
+    window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-    window.addEventListener('keydown', e => keys[e.key] = true);
-    window.addEventListener('keyup', e => keys[e.key] = false);
-
-    // --- MINIMAP RENDERING ---
-    const minimapCanvas = document.getElementById('minimap');
-    const miniCtx = minimapCanvas.getContext('2d');
-
-    function drawMinimap() {
-      miniCtx.clearRect(0, 0, 120, 120);
-      miniCtx.strokeStyle = '#666';
-      miniCtx.lineWidth = 12;
-      miniCtx.beginPath();
-      miniCtx.arc(60, 60, 45, 0, Math.PI * 2);
-      miniCtx.stroke();
-
-      // Player Blip (Red)
-      miniCtx.fillStyle = '#ef4444';
-      miniCtx.beginPath();
-      miniCtx.arc(60 + (playerX * 1.5), 95, 5, 0, Math.PI * 2);
-      miniCtx.fill();
-    }
-
-    // --- MAIN ANIMATION LOOP ---
+    // --- GAME LOOP ---
     function animate() {
       requestAnimationFrame(animate);
 
-      // Handle Steering Controls
-      if ((keys['ArrowLeft'] || keys['a']) && playerX > -trackWidth/2 + 2) {
-        playerX -= 0.25;
-        camera.rotation.z = 0.03; // Dynamic G-Force Camera Tilt
-      } else if ((keys['ArrowRight'] || keys['d']) && playerX < trackWidth/2 - 2) {
-        playerX += 0.25;
-        camera.rotation.z = -0.03;
-      } else {
-        camera.rotation.z = 0;
+      // Driving Physics
+      if (keys['w'] || keys['arrowup']) speed = Math.min(speed + accel, maxSpeed);
+      if (keys['s'] || keys['arrowdown']) speed = Math.max(speed - accel, -maxSpeed * 0.5);
+
+      speed *= friction;
+
+      if (Math.abs(speed) > 0.01) {
+        const dir = speed > 0 ? 1 : -1;
+        if (keys['a'] || keys['arrowleft']) angle += turnSpeed * dir;
+        if (keys['d'] || keys['arrowright']) angle -= turnSpeed * dir;
       }
 
-      // Acceleration & Braking Controls
-      if (keys['ArrowUp'] || keys['w']) currentSpeed = Math.min(currentSpeed + 0.8, 320);
-      else if (keys['ArrowDown'] || keys['s']) currentSpeed = Math.max(currentSpeed - 1.5, 60);
+      carGroup.rotation.y = angle;
+      carGroup.position.x += Math.sin(angle) * speed;
+      carGroup.position.z += Math.cos(angle) * speed;
 
-      // Lock Camera & Cockpit Together
-      camera.position.x = playerX;
-      cockpitGroup.position.x = playerX;
-      cockpitGroup.position.z = camera.position.z;
+      // Bound car to city limits
+      carGroup.position.x = Math.max(-280, Math.min(280, carGroup.position.x));
+      carGroup.position.z = Math.max(-280, Math.min(280, carGroup.position.z));
 
-      // Animate AI Rivals
-      rivalCars.forEach((car, index) => {
-        car.position.z += (currentSpeed * 0.005) - (0.4 + index * 0.1);
-        
-        // Loop traffic endlessly
-        if (car.position.z > camera.position.z + 10) {
-          car.position.z = camera.position.z - 250 - Math.random() * 50;
-          car.position.x = (Math.random() - 0.5) * (trackWidth - 4);
-        }
-      });
+      // Third-Person Camera Follow
+      const camOffset = new THREE.Vector3(0, 4, -10).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+      camera.position.copy(carGroup.position).add(camOffset);
+      camera.lookAt(carGroup.position.clone().add(new THREE.Vector3(0, 1, 0)));
 
-      // Update Telemetry Display
-      document.getElementById('speedDisplay').innerText = Math.floor(currentSpeed);
-      document.getElementById('gearDisplay').innerText = Math.min(Math.floor(currentSpeed / 40) + 1, 8);
-      document.getElementById('rpmDisplay').style.width = ((currentSpeed % 40) / 40 * 100) + '%';
+      // HUD Speedometer
+      const displaySpeed = Math.floor(Math.abs(speed) * 80);
+      document.getElementById('speedometer').innerText = `${displaySpeed.toString().padStart(3, '0')} MPH`;
 
-      drawMinimap();
       renderer.render(scene, camera);
     }
 
-    // Window Resize Handler
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
