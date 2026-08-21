@@ -3,59 +3,83 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>F1 Arcade Racer</title>
+  <title>Turbo F1 Arcade Racer</title>
   <style>
     body {
       margin: 0;
-      background: #111;
+      background: #0d0e15;
       color: #fff;
-      font-family: sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
+      overflow: hidden;
     }
-    #gameCanvas {
-      background: #333;
-      border: 4px solid #fff;
-      box-shadow: 0 0 20px rgba(0,0,0,0.8);
-    }
-    .hud {
-      margin-bottom: 10px;
+    .hud-container {
+      display: flex;
+      justify-content: space-between;
+      width: 440px;
+      margin-bottom: 12px;
       font-size: 1.2rem;
-      font-weight: bold;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .hud-box {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .score-val { color: #facc15; }
+    .speed-val { color: #38bdf8; }
+    #gameCanvas {
+      background: #1a1a1a;
+      border-radius: 12px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 10px rgba(239, 68, 68, 0.3);
     }
   </style>
 </head>
 <body>
-  <div class="hud">Score: <span id="score">0</span></div>
-  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <div class="hud-container">
+    <div class="hud-box">Score: <span id="score" class="score-val">0</span></div>
+    <div class="hud-box">Speed: <span id="speed" class="speed-val">120</span> KM/H</div>
+  </div>
+  <canvas id="gameCanvas" width="440" height="640"></canvas>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const scoreEl = document.getElementById('score');
+    const speedEl = document.getElementById('speed');
 
     let score = 0;
+    let baseSpeed = 6;
     let gameOver = false;
     let roadOffset = 0;
+    let particles = [];
+
+    const ROAD_MARGIN = 40;
+    const ROAD_WIDTH = canvas.width - (ROAD_MARGIN * 2);
 
     const player = {
-      x: 185,
-      y: 500,
+      x: canvas.width / 2 - 17,
+      y: 510,
       width: 34,
-      height: 60,
-      speed: 6
+      height: 65,
+      speed: 7
     };
 
     const VEHICLE_TYPES = [
-      { type: 'cycle', width: 14, height: 28, color: '#e67e22' },
-      { type: 'bike',  width: 16, height: 32, color: '#9b59b6' },
-      { type: 'car',   width: 32, height: 50, color: '#3498db' },
-      { type: 'van',   width: 34, height: 55, color: '#2ecc71' },
-      { type: 'bus',   width: 38, height: 80, color: '#f1c40f' },
-      { type: 'truck', width: 40, height: 90, color: '#e74c3c' }
+      { type: 'cycle', width: 14, height: 30, color: '#f97316' },
+      { type: 'bike',  width: 18, height: 36, color: '#a855f7' },
+      { type: 'car',   width: 34, height: 56, color: '#06b6d4' },
+      { type: 'van',   width: 36, height: 64, color: '#10b981' },
+      { type: 'bus',   width: 40, height: 90, color: '#eab308' },
+      { type: 'truck', width: 42, height: 100, color: '#64748b' }
     ];
 
     const obstacles = [];
@@ -65,64 +89,110 @@
     window.addEventListener('keyup', e => keys[e.key] = false);
 
     function spawnObstacle() {
-      if (Math.random() < 0.025) {
+      if (Math.random() < 0.028) {
         const template = VEHICLE_TYPES[Math.floor(Math.random() * VEHICLE_TYPES.length)];
+        const minX = ROAD_MARGIN + 5;
+        const maxX = canvas.width - ROAD_MARGIN - template.width - 5;
+        
         obstacles.push({
-          x: Math.random() * (canvas.width - template.width),
-          y: -100,
+          x: minX + Math.random() * (maxX - minX),
+          y: -120,
           width: template.width,
           height: template.height,
-          speed: 2 + Math.random() * 3,
+          speed: baseSpeed * 0.4 + Math.random() * 2,
           type: template.type,
           color: template.color
         });
       }
     }
 
-    function drawF1Car(x, y, w, h) {
-      // Rear Wing
-      ctx.fillStyle = '#111';
-      ctx.fillRect(x + 2, y + h - 8, w - 4, 6);
-      
-      // Rear Tires
-      ctx.fillStyle = '#000';
-      ctx.fillRect(x - 3, y + h - 18, 7, 14);
-      ctx.fillRect(x + w - 4, y + h - 18, 7, 14);
-      
-      // Main Body
-      ctx.fillStyle = '#dc2626';
-      ctx.fillRect(x + w * 0.25, y + 12, w * 0.5, h - 20);
-      
-      // Sidepods
-      ctx.fillRect(x + 4, y + 22, w - 8, 20);
+    function createExplosion(x, y) {
+      for (let i = 0; i < 40; i++) {
+        particles.push({
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 10,
+          vy: (Math.random() - 0.5) * 10,
+          size: Math.random() * 6 + 2,
+          color: ['#ef4444', '#f97316', '#facc15', '#ffffff'][Math.floor(Math.random() * 4)],
+          life: 1
+        });
+      }
+    }
 
+    function drawF1Car(x, y, w, h) {
+      ctx.save();
+      
+      // Exhaust Flame & Glow
+      const flameHeight = Math.random() * 12 + 8;
+      const gradient = ctx.createLinearGradient(x + w/2, y + h, x + w/2, y + h + flameHeight);
+      gradient.addColorStop(0, '#f97316');
+      gradient.addColorStop(1, 'rgba(239, 68, 68, 0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(x + w * 0.35, y + h - 4, w * 0.3, flameHeight);
+
+      // Vehicle Drop Shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.fillRect(x - 4, y + 6, w + 8, h);
+
+      // Rear Wing
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(x + 1, y + h - 8, w - 2, 7);
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(x + 3, y + h - 11, w - 6, 3);
+
+      // Rear Wide Tires
+      ctx.fillStyle = '#18181b';
+      ctx.fillRect(x - 5, y + h - 22, 9, 16);
+      ctx.fillRect(x + w - 4, y + h - 22, 9, 16);
+
+      // Main Aerodynamic Chassis Body
+      let bodyGrad = ctx.createLinearGradient(x, y, x + w, y);
+      bodyGrad.addColorStop(0, '#dc2626');
+      bodyGrad.addColorStop(0.5, '#f87171');
+      bodyGrad.addColorStop(1, '#991b1b');
+      ctx.fillStyle = bodyGrad;
+
+      // Sidepods & Main Hull
+      ctx.fillRect(x + 5, y + 22, w - 10, 24);
+      
       // Nose Cone
       ctx.beginPath();
-      ctx.moveTo(x + w * 0.25, y + 12);
-      ctx.lineTo(x + w * 0.5, y);
-      ctx.lineTo(x + w * 0.75, y + 12);
+      ctx.moveTo(x + w * 0.28, y + 18);
+      ctx.lineTo(x + w * 0.5, y + 2);
+      ctx.lineTo(x + w * 0.72, y + 18);
+      ctx.closePath();
       ctx.fill();
 
       // Front Wing
-      ctx.fillStyle = '#111';
-      ctx.fillRect(x, y, w, 5);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(x - 2, y, w + 4, 6);
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(x + 2, y - 2, w - 4, 3);
 
       // Front Tires
-      ctx.fillStyle = '#000';
-      ctx.fillRect(x - 2, y + 4, 6, 12);
-      ctx.fillRect(x + w - 4, y + 4, 6, 12);
+      ctx.fillStyle = '#18181b';
+      ctx.fillRect(x - 4, y + 6, 7, 14);
+      ctx.fillRect(x + w - 3, y + 6, 7, 14);
 
-      // Cockpit & Driver Helmet
-      ctx.fillStyle = '#111';
-      ctx.fillRect(x + w * 0.35, y + 20, w * 0.3, 14);
+      // Glass Cockpit & Driver Helmet
+      ctx.fillStyle = '#0284c7';
+      ctx.fillRect(x + w * 0.35, y + 20, w * 0.3, 12);
       ctx.fillStyle = '#facc15';
       ctx.beginPath();
-      ctx.arc(x + w * 0.5, y + 25, 3.5, 0, Math.PI * 2);
+      ctx.arc(x + w * 0.5, y + 24, 4, 0, Math.PI * 2);
       ctx.fill();
+
+      ctx.restore();
     }
 
     function drawTrafficVehicle(obs) {
       const { x, y, width: w, height: h, type, color } = obs;
+
+      ctx.save();
+      // Drop Shadow for high realism depth
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(x - 3, y + 5, w + 6, h);
 
       switch(type) {
         case 'cycle':
@@ -132,84 +202,102 @@
           ctx.moveTo(x + w/2, y);
           ctx.lineTo(x + w/2, y + h);
           ctx.stroke();
-          // Wheels
-          ctx.fillStyle = '#000';
-          ctx.fillRect(x + w/2 - 2, y, 4, 6);
-          ctx.fillRect(x + w/2 - 2, y + h - 6, 4, 6);
-          // Handlebars
-          ctx.fillRect(x, y + 8, w, 2);
+          ctx.fillStyle = '#111';
+          ctx.fillRect(x + w/2 - 2, y, 4, 8);
+          ctx.fillRect(x + w/2 - 2, y + h - 8, 4, 8);
           break;
 
         case 'bike':
-          // Body & Fairing
           ctx.fillStyle = color;
-          ctx.fillRect(x + 3, y + 6, w - 6, h - 12);
-          // Tires
-          ctx.fillStyle = '#000';
-          ctx.fillRect(x + 5, y, w - 10, 6);
-          ctx.fillRect(x + 5, y + h - 6, w - 10, 6);
-          // Rider
-          ctx.fillStyle = '#333';
-          ctx.fillRect(x + 4, y + 12, w - 8, 10);
+          ctx.fillRect(x + 2, y + 6, w - 4, h - 12);
+          ctx.fillStyle = '#111';
+          ctx.fillRect(x + 4, y, w - 8, 7);
+          ctx.fillRect(x + 4, y + h - 7, w - 8, 7);
+          // Headlight
+          ctx.fillStyle = '#fef08a';
+          ctx.fillRect(x + w/2 - 2, y + h - 2, 4, 2);
           break;
 
         case 'car':
           ctx.fillStyle = color;
           ctx.fillRect(x, y, w, h);
-          // Windshields
-          ctx.fillStyle = '#81e6d9';
-          ctx.fillRect(x + 3, y + 10, w - 6, 8);
-          ctx.fillRect(x + 3, y + h - 14, w - 6, 6);
-          // Lights
-          ctx.fillStyle = '#ff4d4d';
-          ctx.fillRect(x + 2, y + h - 3, 5, 3);
-          ctx.fillRect(x + w - 7, y + h - 3, 5, 3);
+          // Curved Glass Windows
+          ctx.fillStyle = '#1e293b';
+          ctx.fillRect(x + 3, y + 10, w - 6, 10);
+          ctx.fillRect(x + 3, y + h - 16, w - 6, 8);
+          // Taillights
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(x + 2, y, 6, 3);
+          ctx.fillRect(x + w - 8, y, 6, 3);
           break;
 
         case 'van':
           ctx.fillStyle = color;
           ctx.fillRect(x, y, w, h);
-          // Roof grid/details
-          ctx.fillStyle = '#111';
-          ctx.fillRect(x + 4, y + 8, w - 8, 8); // Front Windshield
-          ctx.fillStyle = 'rgba(0,0,0,0.2)';
-          ctx.fillRect(x + 2, y + 20, w - 4, h - 24);
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(x + 3, y + h - 14, w - 6, 8);
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(x + 2, y, 7, 4);
+          ctx.fillRect(x + w - 9, y, 7, 4);
           break;
 
         case 'bus':
           ctx.fillStyle = color;
           ctx.fillRect(x, y, w, h);
-          // Windows
-          ctx.fillStyle = '#333';
-          ctx.fillRect(x + 2, y + 6, w - 4, 6); // Front glass
-          for (let i = 18; i < h - 10; i += 12) {
-            ctx.fillRect(x + 1, y + i, 4, 8);
-            ctx.fillRect(x + w - 5, y + i, 4, 8);
-          }
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(x + 2, y + h - 12, w - 4, 8);
+          // Roof Vents
+          ctx.fillStyle = 'rgba(0,0,0,0.25)';
+          ctx.fillRect(x + w/2 - 4, y + 15, 8, 20);
+          ctx.fillRect(x + w/2 - 4, y + 45, 8, 20);
+          // Taillights
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(x + 2, y, 8, 4);
+          ctx.fillRect(x + w - 10, y, 8, 4);
           break;
 
         case 'truck':
-          // Cabin
+          // Cargo Trailer
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillRect(x, y, w, h - 26);
+          // Cab Front
           ctx.fillStyle = color;
-          ctx.fillRect(x + 2, y, w - 4, 25);
-          ctx.fillStyle = '#81e6d9';
-          ctx.fillRect(x + 5, y + 5, w - 10, 6);
-          // Cargo Bed / Container
-          ctx.fillStyle = '#718096';
-          ctx.fillRect(x, y + 27, w, h - 27);
+          ctx.fillRect(x + 2, y + h - 24, w - 4, 24);
+          ctx.fillStyle = '#0284c7';
+          ctx.fillRect(x + 4, y + h - 10, w - 8, 6);
+          // Rear Lights
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(x + 2, y, 7, 3);
+          ctx.fillRect(x + w - 9, y, 7, 3);
           break;
       }
+      ctx.restore();
     }
 
     function update() {
-      if (gameOver) return;
+      if (gameOver) {
+        // Animate particles on crash
+        particles.forEach((p, idx) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= 0.02;
+          if (p.life <= 0) particles.splice(idx, 1);
+        });
+        return;
+      }
 
-      // Animate road
-      roadOffset = (roadOffset + 5) % 40;
+      // Progressive speed scaling
+      baseSpeed = 6 + Math.floor(score / 150);
+      speedEl.innerText = 110 + Math.floor(score / 5);
+      roadOffset = (roadOffset + baseSpeed) % 40;
 
       // Controls
-      if ((keys['ArrowLeft'] || keys['a']) && player.x > 0) player.x -= player.speed;
-      if ((keys['ArrowRight'] || keys['d']) && player.x < canvas.width - player.width) player.x += player.speed;
+      if ((keys['ArrowLeft'] || keys['a']) && player.x > ROAD_MARGIN) {
+        player.x -= player.speed;
+      }
+      if ((keys['ArrowRight'] || keys['d']) && player.x < canvas.width - ROAD_MARGIN - player.width) {
+        player.x += player.speed;
+      }
 
       spawnObstacle();
 
@@ -217,7 +305,7 @@
         let obs = obstacles[i];
         obs.y += obs.speed;
 
-        // Collision Check (AABB)
+        // Collision Check
         if (
           player.x < obs.x + obs.width &&
           player.x + player.width > obs.x &&
@@ -225,16 +313,17 @@
           player.y + player.height > obs.y
         ) {
           gameOver = true;
+          createExplosion(player.x + player.width/2, player.y + player.height/2);
           setTimeout(() => {
-            alert('Crash! Final Score: ' + score);
+            alert('CRASH! Final Score: ' + score);
             document.location.reload();
-          }, 10);
+          }, 1200);
         }
 
         // Score & cleanup
         if (obs.y > canvas.height) {
           obstacles.splice(i, 1);
-          score += 10;
+          score += 20;
           scoreEl.innerText = score;
           i--;
         }
@@ -244,30 +333,56 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Road background & moving lanes
-      ctx.fillStyle = '#222';
+      // Grass Margins
+      ctx.fillStyle = '#15803d';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 4;
+      // Red & White Curb Track Borders
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(ROAD_MARGIN - 8, 0, 8, canvas.height);
+      ctx.fillRect(canvas.width - ROAD_MARGIN, 0, 8, canvas.height);
+
+      ctx.fillStyle = '#ffffff';
       ctx.setLineDash([20, 20]);
       ctx.lineDashOffset = -roadOffset;
-      
       ctx.beginPath();
-      ctx.moveTo(canvas.width / 3, 0);
-      ctx.lineTo(canvas.width / 3, canvas.height);
-      ctx.moveTo((canvas.width / 3) * 2, 0);
-      ctx.lineTo((canvas.width / 3) * 2, canvas.height);
+      ctx.moveTo(ROAD_MARGIN - 4, 0); ctx.lineTo(ROAD_MARGIN - 4, canvas.height);
+      ctx.moveTo(canvas.width - ROAD_MARGIN + 4, 0); ctx.lineTo(canvas.width - ROAD_MARGIN + 4, canvas.height);
       ctx.stroke();
 
-      // Reset dash offset for vehicle details
-      ctx.setLineDash([]);
+      // Asphalt Road
+      ctx.fillStyle = '#262626';
+      ctx.fillRect(ROAD_MARGIN, 0, ROAD_WIDTH, canvas.height);
 
-      // Draw Player F1 Car
-      drawF1Car(player.x, player.y, player.width, player.height);
+      // Lane Divider Dashes
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([26, 24]);
+      ctx.lineDashOffset = -roadOffset;
+      
+      const laneWidth = ROAD_WIDTH / 3;
+      ctx.beginPath();
+      ctx.moveTo(ROAD_MARGIN + laneWidth, 0);
+      ctx.lineTo(ROAD_MARGIN + laneWidth, canvas.height);
+      ctx.moveTo(ROAD_MARGIN + laneWidth * 2, 0);
+      ctx.lineTo(ROAD_MARGIN + laneWidth * 2, canvas.height);
+      ctx.stroke();
 
-      // Draw Traffic
+      ctx.setLineDash([]); // Reset line dash
+
+      // Draw Traffic & Player
       obstacles.forEach(drawTrafficVehicle);
+      if (!gameOver) {
+        drawF1Car(player.x, player.y, player.width, player.height);
+      }
+
+      // Render Crash Particles
+      particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
     }
 
     function loop() {
