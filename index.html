@@ -2,227 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Super Mario - Sprite Arcade</title>
+  <title>2D Bubble Shooter</title>
   <style>
     body {
+      background: #1a1a1a;
+      color: white;
+      text-align: center;
+      font-family: sans-serif;
       margin: 0;
-      padding: 0;
-      background: #0d0e15;
-      color: #fff;
-      font-family: 'Courier New', Courier, monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+      padding: 20px;
     }
-    h1 {
-      margin: 10px 0 5px;
-      color: #f8d820;
-      text-shadow: 3px 3px #d82800;
-      font-size: 26px;
-    }
-    p { margin: 0 0 10px; color: #aaa; font-size: 13px; }
     canvas {
-      border: 4px solid #fff;
-      background: #5c94fc;
-      box-shadow: 0 12px 35px rgba(0,0,0,0.8);
-      image-rendering: pixelated;
+      background: #222;
+      border: 3px solid #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      cursor: crosshair;
+    }
+    #score {
+      font-size: 24px;
+      margin-bottom: 10px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-
-  <h1>SUPER MARIO BROS - SPRITE EDITION</h1>
-  <p><strong>A / D / Arrows</strong>: Move | <strong>Space / W</strong>: Jump | <strong>Shift</strong>: Run</p>
-  <canvas id="gameCanvas" width="800" height="400"></canvas>
-
-  <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-
-    // Load High-Res Retro Spritesheet (base64 standard arcade palette)
-    const spritesheet = new Image();
-    spritesheet.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAC0SURBVGhD7c4xDcAADMCw9C+9CYYs8p0aGAB3d/fP/X7/9/d/mAGMAMYAYwAwBhgDjAHAAGMAMAYAA4wBxgBgADAGGAOAMcAYYAwwBgBjgDHAGAAMMAYYA4ABxhhgDAAGGAOMAAYAY4A5ABgDjAHGAGACMAYYA4A5wBhgDDAGAAMs39/vD/gBDAAGGGOCMQAYY4IxABgDgDHAGAAMAMYAY4AxABgDjAHAAGMAMAYAA4wBxgB/3O8P6fXq2Hw+6GIAAAAASUVORK5CYII=";
-
-    // Game Physics
-    const gravity = 0.45;
-    const friction = 0.85;
-    const WORLD_WIDTH = 3200;
-    const camera = { x: 0 };
-    let globalTick = 0;
-
-    const player = {
-      x: 50, y: 300, width: 28, height: 36,
-      vx: 0, vy: 0, speed: 0.6, maxSpeed: 4, jumpForce: -11.5,
-      grounded: false, facing: 'right', animFrame: 0, score: 0, coins: 0
-    };
-
-    const platforms = [
-      { x: 0, y: 350, width: 1000, height: 50, type: 'ground' },
-      { x: 1100, y: 350, width: 900, height: 50, type: 'ground' },
-      { x: 2100, y: 350, width: 1100, height: 50, type: 'ground' },
-
-      // Interactive Elements
-      { x: 200, y: 250, width: 32, height: 32, type: 'qblock', hit: false },
-      { x: 232, y: 250, width: 32, height: 32, type: 'brick' },
-      { x: 264, y: 250, width: 32, height: 32, type: 'qblock', hit: false },
-      { x: 500, y: 250, width: 64, height: 100, type: 'pipe' },
-      { x: 800, y: 210, width: 128, height: 32, type: 'brick' },
-      { x: 1300, y: 230, width: 64, height: 120, type: 'pipe' }
-    ];
-
-    const goombas = [
-      { x: 400, y: 322, width: 28, height: 28, vx: -1, alive: true },
-      { x: 850, y: 182, width: 28, height: 28, vx: -1, alive: true },
-      { x: 1450, y: 322, width: 28, height: 28, vx: 1, alive: true }
-    ];
-
-    const keys = {};
-    window.addEventListener('keydown', e => keys[e.code] = true);
-    window.addEventListener('keyup', e => keys[e.code] = false);
-
-    // Procedural High-Detail Mario Sprite Renderer
-    function drawDetailedMario(x, y, facing, frame, isJumping) {
-      ctx.save();
-      if (facing === 'left') {
-        ctx.translate(x + player.width, y);
-        ctx.scale(-1, 1);
-        x = 0; y = 0;
-      }
-
-      // Hat
-      ctx.fillStyle = '#e52521';
-      ctx.fillRect(x + 6, y, 16, 6);
-      ctx.fillRect(x + 4, y + 4, 20, 4);
-
-      // Face
-      ctx.fillStyle = '#fccc96';
-      ctx.fillRect(x + 4, y + 8, 18, 8);
-      ctx.fillRect(x + 2, y + 10, 4, 4);
-
-      // Eye & Mustache
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(x + 16, y + 8, 2, 4);
-      ctx.fillRect(x + 10, y + 14, 12, 4);
-
-      // Shirt
-      ctx.fillStyle = '#e52521';
-      ctx.fillRect(x + 6, y + 18, 16, 8);
-
-      // Overalls
-      ctx.fillStyle = '#00249c';
-      ctx.fillRect(x + 6, y + 20, 14, 12);
-      
-      // Animated Legs (Walking Cycle)
-      ctx.fillStyle = '#4a2400';
-      if (isJumping) {
-        ctx.fillRect(x, y + 26, 10, 8); // Jump Pose
-        ctx.fillRect(x + 16, y + 30, 10, 6);
-      } else if (Math.abs(player.vx) > 0.1 && Math.floor(frame / 6) % 2 === 0) {
-        ctx.fillRect(x + 2, y + 30, 10, 6); // Stride 1
-        ctx.fillRect(x + 16, y + 30, 10, 6);
-      } else {
-        ctx.fillRect(x + 4, y + 32, 8, 4); // Standing Still
-        ctx.fillRect(x + 16, y + 32, 8, 4);
-      }
-
-      ctx.restore();
-    }
-
-    function update() {
-      globalTick++;
-
-      const currentMax = keys['ShiftLeft'] || keys['ShiftRight'] ? player.maxSpeed * 1.5 : player.maxSpeed;
-      if (keys['ArrowRight'] || keys['KeyD']) {
-        if (player.vx < currentMax) player.vx += player.speed;
-        player.facing = 'right';
-      } else if (keys['ArrowLeft'] || keys['KeyA']) {
-        if (player.vx > -currentMax) player.vx -= player.speed;
-        player.facing = 'left';
-      } else {
-        player.vx *= friction;
-      }
-
-      if ((keys['Space'] || keys['ArrowUp'] || keys['KeyW']) && player.grounded) {
-        player.vy = player.jumpForce;
-        player.grounded = false;
-      }
-
-      player.vy += gravity;
-      player.x += player.vx;
-      player.y += player.vy;
-
-      // Platform Collision
-      player.grounded = false;
-      platforms.forEach(p => {
-        if (
-          player.x < p.x + p.width &&
-          player.x + player.width > p.x &&
-          player.y + player.height <= p.y + player.vy &&
-          player.y + player.height + player.vy >= p.y
-        ) {
-          player.vy = 0;
-          player.y = p.y - player.height;
-          player.grounded = true;
-        }
-      });
-
-      // Camera Tracking
-      camera.x = player.x - canvas.width / 3;
-      if (camera.x < 0) camera.x = 0;
-      if (camera.x > WORLD_WIDTH - canvas.width) camera.x = WORLD_WIDTH - canvas.width;
-    }
-
-    function render() {
-      ctx.fillStyle = '#5c94fc';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.save();
-      ctx.translate(-camera.x, 0);
-
-      // Draw Platforms & Pipes
-      platforms.forEach(p => {
-        if (p.type === 'ground') {
-          ctx.fillStyle = '#c84c0c';
-          ctx.fillRect(p.x, p.y, p.width, p.height);
-          ctx.fillStyle = '#00a800';
-          ctx.fillRect(p.x, p.y, p.width, 8);
-        } else if (p.type === 'brick') {
-          ctx.fillStyle = '#b84418';
-          ctx.fillRect(p.x, p.y, p.width, p.height);
-          ctx.strokeStyle = '#000';
-          ctx.strokeRect(p.x, p.y, p.width, p.height);
-        } else if (p.type === 'pipe') {
-          ctx.fillStyle = '#00a800';
-          ctx.fillRect(p.x, p.y, p.width, p.height);
-          ctx.strokeStyle = '#000';
-          ctx.strokeRect(p.x, p.y, p.width, p.height);
-        }
-      });
-
-      // Draw Animated Player
-      drawDetailedMario(player.x, player.y, player.facing, globalTick, !player.grounded);
-
-      ctx.restore();
-
-      // HUD
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 16px "Courier New", monospace';
-      ctx.fillText(`MARIO`, 30, 30);
-      ctx.fillText(`000200`, 30, 50);
-      ctx.fillText(`WORLD 1-1`, 350, 30);
-    }
-
-    function gameLoop() {
-      update();
-      render();
-      requestAnimationFrame(gameLoop);
-    }
-
-    gameLoop();
-  </script>
+  <div id="score">Score: 0</div>
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <script src="game.js"></script>
 </body>
 </html>
