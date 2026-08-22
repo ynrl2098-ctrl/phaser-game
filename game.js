@@ -5,7 +5,7 @@ const scoreEl = document.getElementById("score");
 const RADIUS = 20;
 const ROWS = 8;
 const COLS = 10;
-const COLORS = ["#FF5733", "#33FF57", "#3357FF", "#F3FF33"];
+const COLORS = ["#FFFF00", "#00FF00", "#0055FF", "#FF4422"]; // Yellow, Green, Blue, Red
 const BOMB_COLOR = "#000000";
 
 let score = 0;
@@ -26,13 +26,12 @@ function initGrid() {
 }
 
 function spawnProjectile() {
-  // 15% chance to spawn a Bomb power-up
-  const isBomb = Math.random() < 0.15;
+  const isBomb = Math.random() < 0.15; // 15% chance for bomb
   const color = isBomb ? BOMB_COLOR : COLORS[Math.floor(Math.random() * COLORS.length)];
 
   projectile = {
     x: canvas.width / 2,
-    y: canvas.height - 30,
+    y: canvas.height - 40, // Positioned safely inside the bottom view
     dx: 0,
     dy: 0,
     color: color,
@@ -49,7 +48,6 @@ canvas.addEventListener("mousemove", (e) => {
 
 canvas.addEventListener("click", () => {
   if (gameOver) {
-    // Restart game on click
     score = 0;
     gameOver = false;
     scoreEl.innerText = "Score: 0";
@@ -60,9 +58,12 @@ canvas.addEventListener("click", () => {
 
   if (!projectile.moving) {
     let angle = Math.atan2(mousePos.y - projectile.y, mousePos.x - projectile.x);
-    projectile.dx = Math.cos(angle) * 10;
-    projectile.dy = Math.sin(angle) * 10;
-    projectile.moving = true;
+    // Prevent shooting downward or completely flat horizontally
+    if (angle < -0.1) {
+      projectile.dx = Math.cos(angle) * 10;
+      projectile.dy = Math.sin(angle) * 10;
+      projectile.moving = true;
+    }
   }
 });
 
@@ -71,7 +72,8 @@ function drawCircle(x, y, color, isBomb = false) {
   ctx.arc(x, y, RADIUS - 1, 0, Math.PI * 2);
   ctx.fillStyle = color;
   ctx.fill();
-  ctx.strokeStyle = "#111";
+  ctx.strokeStyle = "#FFFFFF";
+  ctx.lineWidth = 1.5;
   ctx.stroke();
   ctx.closePath();
 
@@ -90,7 +92,7 @@ function update() {
   projectile.x += projectile.dx;
   projectile.y += projectile.dy;
 
-  // Wall bounce logic
+  // Bounce off left/right side walls
   if (projectile.x - RADIUS <= 0 || projectile.x + RADIUS >= canvas.width) {
     projectile.dx *= -1;
   }
@@ -120,7 +122,6 @@ function update() {
 
 function triggerBombExplosion(r, c) {
   let popped = 0;
-  // Explode 3x3 grid around impact
   for (let row = r - 1; row <= r + 1; row++) {
     for (let col = c - 1; col <= c + 1; col++) {
       if (row >= 0 && row < ROWS && col >= 0 && col < COLS && grid[row][col]) {
@@ -166,7 +167,7 @@ function checkGameOver() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw Grid
+  // 1. Draw Grid Bubbles
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       if (grid[r][c]) {
@@ -176,17 +177,17 @@ function draw() {
   }
 
   if (!gameOver) {
-    // Aim line
+    // 2. Draw Aim Line
     if (!projectile.moving) {
       ctx.beginPath();
       ctx.moveTo(projectile.x, projectile.y);
       ctx.lineTo(mousePos.x, mousePos.y);
-      ctx.strokeStyle = "rgba(255,255,255,0.3)";
+      ctx.strokeStyle = "rgba(255,255,255,0.4)";
       ctx.lineWidth = 2;
       ctx.stroke();
     }
 
-    // Active Projectile
+    // 3. Draw Active Colored Shooter Ball
     drawCircle(projectile.x, projectile.y, projectile.color, projectile.isBomb);
   } else {
     // Game Over Overlay
