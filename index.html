@@ -2,33 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>2D Bubble Shooter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2D Hexagonal Bubble Shooter</title>
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
     body {
-      background: #1a1a1a;
-      color: white;
-      text-align: center;
-      font-family: sans-serif;
-      margin: 0;
-      padding: 20px;
+      background: #0f172a; color: #f8fafc;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100vh; padding: 10px;
     }
+    .game-container { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .ui-panel {
+      display: flex; justify-content: space-between; align-items: center;
+      width: 440px; background: #1e293b; padding: 12px 20px;
+      border-radius: 10px; border: 2px solid #334155;
+    }
+    .ui-group { display: flex; flex-direction: column; align-items: center; }
+    .ui-label { font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; }
+    .ui-value { font-size: 1.25rem; font-weight: 700; color: #38bdf8; }
+    .btn-restart {
+      background: #3b82f6; color: #ffffff; border: none; padding: 8px 16px;
+      font-size: 0.9rem; font-weight: 600; border-radius: 6px; cursor: pointer;
+    }
+    .btn-restart:hover { background: #2563eb; }
     canvas {
-      background: #222;
-      border: 3px solid #fff;
-      border-radius: 8px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-      cursor: crosshair;
-    }
-    #score {
-      font-size: 24px;
-      margin-bottom: 10px;
-      font-weight: bold;
+      background: #090d16; border: 3px solid #334155;
+      border-radius: 12px; cursor: crosshair;
     }
   </style>
 </head>
 <body>
-  <div id="score">Score: 0</div>
-  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <div class="game-container">
+    <div class="ui-panel">
+      <div class="ui-group">
+        <span class="ui-label">Score</span>
+        <span id="score" class="ui-value">0</span>
+      </div>
+      <div class="ui-group">
+        <span class="ui-label">Fouls (Fouls/5)</span>
+        <span id="misses" class="ui-value">0 / 5</span>
+      </div>
+      <button id="restartBtn" class="btn-restart">Restart</button>
+    </div>
+    <canvas id="gameCanvas" width="440" height="640"></canvas>
+  </div>
   <script src="game.js"></script>
 </body>
 </html>
