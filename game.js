@@ -11,7 +11,7 @@ const DIAMETER = RADIUS * 2;
 const ROW_HEIGHT = RADIUS * Math.sqrt(3);
 const COLS = 10;
 const ROWS = 10;
-const LAUNCHER_Y = canvas.height - 50; // Raised launcher position so ball is fully visible
+const LAUNCHER_Y = canvas.height - 80; // Raised significantly so the ball sits inside the canvas area
 
 const BUBBLE_COLORS = [
   { name: 'red', fill: '#ef4444', stroke: '#b91c1c' },
@@ -335,7 +335,6 @@ function isBoardCleared() {
 }
 
 function checkGameOver() {
-  // Triggers only if grid bubbles shift down past row index 7
   for (let r = ROWS - 2; r < ROWS; r++) {
     let maxCols = (r % 2 === 1) ? COLS - 1 : COLS;
     for (let c = 0; c < maxCols; c++) {
@@ -395,12 +394,12 @@ function draw() {
   });
 
   if (!gameOver && !gameWon) {
-    // 3. Draw Aim Trajectory Line
+    // 3. Draw Aim Line
     if (currentBubble && !currentBubble.moving) {
       ctx.beginPath();
       ctx.moveTo(currentBubble.x, currentBubble.y);
       ctx.lineTo(mousePos.x, mousePos.y);
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 6]);
       ctx.stroke();
@@ -416,7 +415,7 @@ function draw() {
       drawBubble(50, LAUNCHER_Y, nextBubble.color);
     }
 
-    // 5. Draw Active Shooter Ball
+    // 5. Draw Active Shooter Ball directly centered at LAUNCHER_Y
     if (currentBubble) {
       drawBubble(currentBubble.x, currentBubble.y, currentBubble.color);
     }
