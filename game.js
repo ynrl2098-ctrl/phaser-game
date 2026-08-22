@@ -10,8 +10,8 @@ const RADIUS = 22;
 const DIAMETER = RADIUS * 2;
 const ROW_HEIGHT = RADIUS * Math.sqrt(3);
 const COLS = 10;
-const ROWS = 12;
-const LAUNCHER_Y = canvas.height - 40;
+const ROWS = 10;
+const LAUNCHER_Y = canvas.height - 50; // Raised launcher position so ball is fully visible
 
 const BUBBLE_COLORS = [
   { name: 'red', fill: '#ef4444', stroke: '#b91c1c' },
@@ -49,7 +49,8 @@ function getGridIndices(x, y) {
   const isOdd = r % 2 === 1;
   const xOffset = isOdd ? RADIUS * 2 : RADIUS;
   let c = Math.round((x - xOffset) / DIAMETER);
-  c = Math.max(0, Math.min(COLS - (isOdd ? 2 : 1), c));
+  const maxCols = isOdd ? COLS - 1 : COLS;
+  c = Math.max(0, Math.min(maxCols - 1, c));
 
   return { r, c };
 }
@@ -89,7 +90,8 @@ function createBubble(colorObj) {
 }
 
 function initGame() {
-  grid = Array.from({ length: ROWS }, () => []);
+  grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+  
   for (let r = 0; r < 4; r++) {
     let maxCols = (r % 2 === 1) ? COLS - 1 : COLS;
     for (let c = 0; c < maxCols; c++) {
@@ -114,6 +116,7 @@ function spawnNextBubble() {
   currentBubble = nextBubble;
   currentBubble.x = canvas.width / 2;
   currentBubble.y = LAUNCHER_Y;
+  currentBubble.moving = false;
   nextBubble = createBubble();
 }
 
@@ -125,7 +128,7 @@ canvas.addEventListener("mousemove", (e) => {
 });
 
 canvas.addEventListener("click", () => {
-  if (gameOver || gameWon || currentBubble.moving) return;
+  if (gameOver || gameWon || !currentBubble || currentBubble.moving) return;
 
   let angle = Math.atan2(mousePos.y - currentBubble.y, mousePos.x - currentBubble.x);
   
@@ -157,6 +160,7 @@ function update() {
   currentBubble.x += currentBubble.dx;
   currentBubble.y += currentBubble.dy;
 
+  // Wall collisions
   if (currentBubble.x - RADIUS <= 0) {
     currentBubble.x = RADIUS;
     currentBubble.dx *= -1;
@@ -165,11 +169,13 @@ function update() {
     currentBubble.dx *= -1;
   }
 
+  // Ceiling collision
   if (currentBubble.y - RADIUS <= 0) {
     snapToGrid();
     return;
   }
 
+  // Bubble collisions
   for (let r = 0; r < ROWS; r++) {
     let maxCols = (r % 2 === 1) ? COLS - 1 : COLS;
     for (let c = 0; c < maxCols; c++) {
@@ -247,7 +253,7 @@ function snapToGrid() {
 
 function getMatchedCluster(startR, startC, targetColor) {
   let matches = [];
-  let visited = Array.from({ length: ROWS }, () => []);
+  let visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
   let queue = [{ r: startR, c: startC }];
   visited[startR][startC] = true;
 
@@ -266,7 +272,7 @@ function getMatchedCluster(startR, startC, targetColor) {
 }
 
 function dropUnconnectedBubbles() {
-  let connectedToTop = Array.from({ length: ROWS }, () => []);
+  let connectedToTop = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
   let queue = [];
 
   for (let c = 0; c < COLS; c++) {
@@ -329,10 +335,14 @@ function isBoardCleared() {
 }
 
 function checkGameOver() {
-  for (let c = 0; c < COLS; c++) {
-    if (grid[ROWS - 1][c] !== null) {
-      gameOver = true;
-      return;
+  // Triggers only if grid bubbles shift down past row index 7
+  for (let r = ROWS - 2; r < ROWS; r++) {
+    let maxCols = (r % 2 === 1) ? COLS - 1 : COLS;
+    for (let c = 0; c < maxCols; c++) {
+      if (grid[r][c] !== null) {
+        gameOver = true;
+        return;
+      }
     }
   }
 }
@@ -368,6 +378,7 @@ function drawBubble(x, y, colorObj, opacity = 1.0) {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // 1. Draw Grid Bubbles
   for (let r = 0; r < ROWS; r++) {
     let maxCols = (r % 2 === 1) ? COLS - 1 : COLS;
     for (let c = 0; c < maxCols; c++) {
@@ -378,33 +389,40 @@ function draw() {
     }
   }
 
+  // 2. Draw Falling Particles
   floatingAnimations.forEach(p => {
     drawBubble(p.x, p.y, p.color, p.alpha);
   });
 
   if (!gameOver && !gameWon) {
+    // 3. Draw Aim Trajectory Line
     if (currentBubble && !currentBubble.moving) {
       ctx.beginPath();
       ctx.moveTo(currentBubble.x, currentBubble.y);
       ctx.lineTo(mousePos.x, mousePos.y);
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 6]);
       ctx.stroke();
       ctx.setLineDash([]);
     }
 
+    // 4. Draw Next Bubble Preview
     ctx.fillStyle = "#94a3b8";
     ctx.font = "12px sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("NEXT", 50, LAUNCHER_Y - 30);
-    drawBubble(50, LAUNCHER_Y, nextBubble.color);
+    if (nextBubble) {
+      drawBubble(50, LAUNCHER_Y, nextBubble.color);
+    }
 
+    // 5. Draw Active Shooter Ball
     if (currentBubble) {
       drawBubble(currentBubble.x, currentBubble.y, currentBubble.color);
     }
   }
 
+  // 6. Game Over / Victory Overlay
   if (gameOver || gameWon) {
     ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
