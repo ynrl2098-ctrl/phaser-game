@@ -3,312 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shatterpoint Archery - Advanced Edition</title>
+    <title>A Special Question ✨</title>
     <style>
+        /* Modern, vibrant gradient background */
         body {
-            background-color: #0d1117;
-            color: #c9d1d9;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #ffe5ec 0%, #ffb3c6 100%);
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             height: 100vh;
             margin: 0;
             overflow: hidden;
+            position: relative;
         }
-        .hud {
-            display: flex;
-            gap: 25px;
-            margin-bottom: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            background: #161b22;
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: 1px solid #30363d;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        canvas {
-            background: linear-gradient(to bottom, #090d16, #1f2937);
-            border: 2px solid #30363d;
-            border-radius: 12px;
-            cursor: crosshair;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-        }
-        .controls-hint {
-            margin-top: 10px;
-            font-size: 13px;
-            color: #8b949e;
+
+        /* Glassmorphism card look */
+        .card {
             text-align: center;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 45px 35px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(255, 75, 110, 0.15);
+            max-width: 420px;
+            width: 85%;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            z-index: 10;
+            transition: all 0.5s ease;
         }
-        .ammo-selector {
+
+        h1 {
+            color: #ff4b6e;
+            font-size: 2.2rem;
+            margin-bottom: 25px;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        /* Responsive image wrapping */
+        .image-box img {
+            width: 180px;
+            height: 180px;
+            object-fit: contain;
+            margin-bottom: 25px;
+            filter: drop-shadow(0 8px 12px rgba(0,0,0,0.08));
+        }
+
+        /* Flexbox structure to handle growing Yes button elegantly */
+        .btn-wrapper {
             display: flex;
-            gap: 10px;
-            margin-top: 8px;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+            margin-top: 15px;
+            min-height: 120px;
+            position: relative;
         }
-        .ammo-btn {
-            background: #21262d;
-            color: #c9d1d9;
-            border: 1px solid #30363d;
-            padding: 5px 12px;
-            border-radius: 6px;
+
+        button {
+            padding: 14px 36px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 50px;
             cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s, box-shadow 0.3s;
         }
-        .ammo-btn.active {
-            background: #1f6feb;
-            border-color: #58a6ff;
-            color: #ffffff;
+
+        #yesBtn {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+        }
+
+        #yesBtn:hover {
+            box-shadow: 0 12px 20px rgba(76, 175, 80, 0.3);
+        }
+
+        #noBtn {
+            background: linear-gradient(135deg, #ff4b6e 0%, #ff2a55 100%);
+            color: white;
+            position: absolute;
+        }
+
+        /* Floating background hearts animation */
+        .heart-bg {
+            position: absolute;
+            font-size: 24px;
+            color: rgba(255, 75, 110, 0.2);
+            animation: floatUp 6s linear infinite;
+            bottom: -50px;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-105vh) rotate(360deg);
+                opacity: 0;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="hud">
-        <div>Score: <span id="score">0</span></div>
-        <div>Arrows: <span id="arrows">12</span></div>
-        <div>Wind: <span id="wind">0.00</span></div>
-        <div>Type: <span id="arrowTypeDisplay">Standard</span></div>
-    </div>
+    <!-- Floating decorative background shapes -->
+    <script>
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.classList.add('heart-bg');
+            heart.innerHTML = '❤️';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = Math.random() * 3 + 4 + 's';
+            heart.style.fontSize = Math.random() * 15 + 15 + 'px';
+            document.body.appendChild(heart);
+            setTimeout(() => heart.remove(), 7000);
+        }
+        setInterval(createHeart, 400);
+    </script>
 
-    <canvas id="gameCanvas" width="900" height="480"></canvas>
-    
-    <div class="ammo-selector">
-        <button class="ammo-btn active" id="btn-0" onclick="setArrowType(0)">1. Standard</button>
-        <button class="ammo-btn" id="btn-1" onclick="setArrowType(1)">2. Heavy Bolt (Low Wind)</button>
-        <button class="ammo-btn" id="btn-2" onclick="setArrowType(2)">3. Light Arrow (Fast)</button>
+    <div class="card">
+        <div class="image-box">
+            <!-- Smooth interactive reaction GIF -->
+            <img id="displayGif" src="https://giphy.com" alt="Cute character asking">
+        </div>
+        <h1 id="questionText">Will you go on a special date with me? ✨</h1>
+        
+        <div class="btn-wrapper">
+            <button id="yesBtn" onclick="selectYes()">Yes! 🥰</button>
+            <button id="noBtn" onmouseover="dodgeButton()" onclick="dodgeButton()">No 🥺</button>
+        </div>
     </div>
-
-    <div class="controls-hint">Click & drag backward from the bow to aim. Release to fire! Use keys 1-3 or buttons to switch arrows.</div>
 
     <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
+        const noBtn = document.getElementById('noBtn');
+        const yesBtn = document.getElementById('yesBtn');
+        const questionText = document.getElementById('questionText');
+        const displayGif = document.getElementById('displayGif');
 
-        let score = 0;
-        let arrowsLeft = 12;
-        let wind = (Math.random() - 0.5) * 1.8;
+        let scaleFactor = 1.0;
+        let phrases = ["No 🥺", "Are you sure? 💔", "Puuulease? 🎀", "Think again! 👀", "Don't do this! 😭"];
+        let phraseIndex = 0;
 
-        // Arrow Types Configuration
-        const arrowTypes = [
-            { name: "Standard", gravity: 0.2, windRes: 0.015, speedMult: 0.12, color: "#ffffff" },
-            { name: "Heavy Bolt", gravity: 0.35, windRes: 0.004, speedMult: 0.10, color: "#f0883e" },
-            { name: "Light Arrow", gravity: 0.12, windRes: 0.03, speedMult: 0.15, color: "#58a6ff" }
-        ];
-        let currentTypeIndex = 0;
+        function dodgeButton() {
+            // Screen positioning limits keeping margins safe
+            const x = Math.random() * (window.innerWidth - noBtn.offsetWidth - 60) + 30;
+            const y = Math.random() * (window.innerHeight - noBtn.offsetHeight - 60) + 30;
+            
+            noBtn.style.left = `${x}px`;
+            noBtn.style.top = `${y}px`;
 
-        const bow = { x: 120, y: 340 };
-        let arrow = { x: bow.x, y: bow.y, vx: 0, vy: 0, active: false, angle: 0 };
-        const target = { x: 760, y: 240, radius: 45, speed: 2.8 };
+            // Cycle through pleading text on the No button
+            phraseIndex = (phraseIndex + 1) % phrases.length;
+            noBtn.innerText = phrases[phraseIndex];
 
-        // Particles System (Wind streams & Impact sparks)
-        let windParticles = [];
-        for (let i = 0; i < 35; i++) {
-            windParticles.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                length: Math.random() * 25 + 10,
-                speed: Math.random() * 2 + 1
-            });
-        }
-        let impactSparks = [];
-
-        let isDragging = false, dragStartX = 0, dragStartY = 0, currentMouseX = 0, currentMouseY = 0;
-
-        // Input Handlers
-        canvas.addEventListener("mousedown", (e) => {
-            if (arrow.active || arrowsLeft <= 0) return;
-            isDragging = true;
-            dragStartX = e.offsetX;
-            dragStartY = e.offsetY;
-        });
-
-        canvas.addEventListener("mousemove", (e) => {
-            if (!isDragging) return;
-            currentMouseX = e.offsetX;
-            currentMouseY = e.offsetY;
-        });
-
-        canvas.addEventListener("mouseup", (e) => {
-            if (!isDragging) return;
-            isDragging = false;
-
-            let pullX = dragStartX - e.offsetX;
-            let pullY = dragStartY - e.offsetY;
-            let activeConfig = arrowTypes[currentTypeIndex];
-
-            arrow.vx = pullX * activeConfig.speedMult;
-            arrow.vy = pullY * activeConfig.speedMult;
-            arrow.active = true;
-            arrowsLeft--;
-            document.getElementById("arrows").innerText = arrowsLeft;
-        });
-
-        window.addEventListener("keydown", (e) => {
-            if (e.key === '1') setArrowType(0);
-            if (e.key === '2') setArrowType(1);
-            if (e.key === '3') setArrowType(2);
-        });
-
-        function setArrowType(index) {
-            if (arrow.active) return;
-            currentTypeIndex = index;
-            document.getElementById("arrowTypeDisplay").innerText = arrowTypes[index].name;
-            document.querySelectorAll(".ammo-btn").forEach((btn, idx) => {
-                btn.classList.toggle("active", idx === index);
-            });
+            // Scale the Yes button smoothly
+            scaleFactor += 0.25;
+            yesBtn.style.transform = `scale(${scaleFactor})`;
         }
 
-        function createSparks(x, y, color) {
-            for (let i = 0; i < 15; i++) {
-                impactSparks.push({
-                    x: x, y: y,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: (Math.random() - 0.5) * 8,
-                    life: 25,
-                    color: color
-                });
-            }
+        function selectYes() {
+            questionText.innerHTML = "Yay! See you soon! ❤️✨";
+            displayGif.src = "https://giphy.com";
+            noBtn.style.display = 'none';
+            yesBtn.style.transform = "scale(1.15)";
+            
+            // Turn the hearts faster and change theme dynamically
+            document.querySelector('.card').style.background = 'rgba(255, 255, 255, 0.95)';
         }
-
-        function update() {
-            // Move Target
-            target.y += target.speed;
-            if (target.y < 60 || target.y > canvas.height - 60) target.speed *= -1;
-
-            // Wind Particle Flow
-            windParticles.forEach(p => {
-                p.x += wind * 1.5 - p.speed;
-                if (p.x < 0) p.x = canvas.width;
-                if (p.x > canvas.width) p.x = 0;
-            });
-
-            // Spark Physics
-            impactSparks.forEach(s => {
-                s.x += s.vx;
-                s.y += s.vy;
-                s.life--;
-            });
-            impactSparks = impactSparks.filter(s => s.life > 0);
-
-            // Arrow Physics & Tracking
-            if (arrow.active) {
-                let config = arrowTypes[currentTypeIndex];
-                arrow.vy += config.gravity;
-                arrow.vx += wind * config.windRes * 50;
-                arrow.x += arrow.vx;
-                arrow.y += arrow.vy;
-                arrow.angle = Math.atan2(arrow.vy, arrow.vx);
-
-                let dx = arrow.x - target.x;
-                let dy = arrow.y - target.y;
-                let distance = Math.sqrt(dx * dx + dy * dy);
-
-                if (distance < target.radius) {
-                    let points = distance < 12 ? 100 : distance < 25 ? 50 : 20;
-                    score += points;
-                    document.getElementById("score").innerText = score;
-                    createSparks(arrow.x, arrow.y, points === 100 ? "#ffeb3b" : "#58a6ff");
-                    resetArrow();
-                }
-
-                if (arrow.x > canvas.width || arrow.y > canvas.height || arrow.x < 0 || arrow.y < 0) {
-                    resetArrow();
-                }
-            }
-        }
-
-        function resetArrow() {
-            arrow.active = false;
-            arrow.x = bow.x;
-            arrow.y = bow.y;
-            arrow.vx = arrow.vy = arrow.angle = 0;
-            wind = (Math.random() - 0.5) * 2.2;
-            document.getElementById("wind").innerText = wind.toFixed(2);
-
-            if (arrowsLeft <= 0) {
-                setTimeout(() => {
-                    alert(`Mission Complete! Final Score: ${score}`);
-                    score = 0;
-                    arrowsLeft = 12;
-                    document.getElementById("score").innerText = score;
-                    document.getElementById("arrows").innerText = arrowsLeft;
-                }, 200);
-            }
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw Wind Streamlines
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
-            ctx.lineWidth = 1;
-            windParticles.forEach(p => {
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y);
-                ctx.lineTo(p.x + p.length * (wind >= 0 ? 1 : -1), p.y);
-                ctx.stroke();
-            });
-
-            // Draw Multi-Tier Target
-            [ {r: 45, c: '#21262d'}, {r: 32, c: '#f85149'}, {r: 20, c: '#f0883e'}, {r: 10, c: '#e3b341'} ].forEach(ring => {
-                ctx.beginPath();
-                ctx.arc(target.x, target.y, ring.r, 0, Math.PI * 2);
-                ctx.fillStyle = ring.c;
-                ctx.fill();
-                ctx.strokeStyle = "#30363d";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            });
-
-            // Draw Bow
-            ctx.beginPath();
-            ctx.arc(bow.x, bow.y, 40, -Math.PI / 2.2, Math.PI / 2.2);
-            ctx.strokeStyle = "#58a6ff";
-            ctx.lineWidth = 4;
-            ctx.stroke();
-
-            // Draw Aiming Guide Line
-            if (isDragging) {
-                ctx.beginPath();
-                ctx.moveTo(bow.x, bow.y);
-                ctx.lineTo(bow.x + (dragStartX - currentMouseX) * 0.4, bow.y + (dragStartY - currentMouseY) * 0.4);
-                ctx.strokeStyle = "#3fb950";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
-
-            // Draw Active Arrow
-            ctx.save();
-            ctx.translate(arrow.x, arrow.y);
-            if (arrow.active) ctx.rotate(arrow.angle);
-            ctx.beginPath();
-            ctx.moveTo(-18, 0);
-            ctx.lineTo(18, 0);
-            ctx.strokeStyle = arrowTypes[currentTypeIndex].color;
-            ctx.lineWidth = 3;
-            ctx.stroke();
-            ctx.restore();
-
-            // Draw Impact Sparks
-            impactSparks.forEach(s => {
-                ctx.beginPath();
-                ctx.arc(s.x, s.y, 2, 0, Math.PI * 2);
-                ctx.fillStyle = s.color;
-                ctx.fill();
-            });
-        }
-
-        function loop() {
-            update();
-            draw();
-            requestAnimationFrame(loop);
-        }
-
-        document.getElementById("wind").innerText = wind.toFixed(2);
-        loop();
     </script>
 </body>
 </html>
