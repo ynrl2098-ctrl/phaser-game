@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cafe Date Proposal</title>
+  <title>A Quick Question...</title>
   <style>
     * {
       box-sizing: border-box;
@@ -20,22 +20,22 @@
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-      overflow: hidden; /* Important for floating hearts */
+      overflow: hidden;
       position: relative;
     }
 
     /* Floating Heart Styles */
     .heart {
       position: absolute;
-      background-color: #ffb6c1; /* Light pink */
+      background-color: #ffb6c1;
       display: inline-block;
       width: 10px;
       height: 10px;
       transform: rotate(-45deg);
       opacity: 0.8;
       animation: floatUp 4s linear infinite;
-      pointer-events: none; /* Prevents interaction issues */
-      z-index: 1; /* Puts hearts behind the card */
+      pointer-events: none;
+      z-index: 1;
     }
 
     .heart::before,
@@ -79,12 +79,26 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
       text-align: center;
       max-width: 90%;
-      width: 400px;
+      width: 420px;
       position: relative;
-      z-index: 10; /* Keeps the card in front of the hearts */
+      z-index: 10;
     }
 
-    h1 {
+    /* First Page (Quote Screen) */
+    #page1 h1 {
+      color: #6a3089;
+      font-size: 1.8rem;
+      font-style: italic;
+      margin-bottom: 30px;
+      line-height: 1.4;
+    }
+
+    /* Second Page (Date Proposal Screen) */
+    #page2 {
+      display: none;
+    }
+
+    #page2 h1 {
       color: #6a3089;
       font-size: 2rem;
       margin-top: 0;
@@ -111,14 +125,14 @@
       transition: transform 0.2s ease, background-color 0.2s ease;
     }
 
-    #yesBtn {
+    #nextBtn, #yesBtn {
       background-color: #8a4ba8;
       color: white;
       box-shadow: 0 4px 12px rgba(138, 75, 168, 0.3);
     }
 
-    #yesBtn:hover {
-      transform: scale(1.1);
+    #nextBtn:hover, #yesBtn:hover {
+      transform: scale(1.08);
       background-color: #733c8f;
     }
 
@@ -144,23 +158,42 @@
 <body>
 
   <div class="card-container">
-    <h1 id="question">Would you like to go on a cafe date with me? ☕✨</h1>
-
-    <div class="btn-container">
-      <button id="yesBtn">Yes!</button>
-      <button id="noBtn">No</button>
+    <!-- PAGE 1: Intro Quote -->
+    <div id="page1">
+      <h1>"Would you like to listen to me once?" 💭✨</h1>
+      <button id="nextBtn">Sure ❤️</button>
     </div>
 
-    <div id="responseMessage">Yay! Can't wait for our date! ☕❤️</div>
+    <!-- PAGE 2: The Evasion Proposal -->
+    <div id="page2">
+      <h1 id="question">Would you like to go on a cafe date with me? ☕✨</h1>
+
+      <div class="btn-container">
+        <button id="yesBtn">Yes!</button>
+        <button id="noBtn">No</button>
+      </div>
+
+      <div id="responseMessage">Yay! Can't wait for our date! ☕❤️</div>
+    </div>
   </div>
 
   <script>
+    const page1 = document.getElementById('page1');
+    const page2 = document.getElementById('page2');
+    const nextBtn = document.getElementById('nextBtn');
+    
     const noBtn = document.getElementById('noBtn');
     const yesBtn = document.getElementById('yesBtn');
     const responseMessage = document.getElementById('responseMessage');
     const question = document.getElementById('question');
 
-    // Button evasion logic
+    // Transition from Page 1 to Page 2
+    nextBtn.addEventListener('click', () => {
+      page1.style.display = 'none';
+      page2.style.display = 'block';
+    });
+
+    // Move the "No" button smoothly away when hovered or touched
     function moveButton() {
       const padding = 60;
       const maxX = window.innerWidth - noBtn.offsetWidth - padding;
@@ -177,35 +210,33 @@
     noBtn.addEventListener('mouseenter', moveButton);
     noBtn.addEventListener('touchstart', moveButton);
 
+    // Reveal final acceptance message
     yesBtn.addEventListener('click', () => {
       question.style.display = 'none';
       document.querySelector('.btn-container').style.display = 'none';
       responseMessage.style.display = 'block';
     });
 
-    // --- HEART GENERATION SCRIPT ---
+    // Floating Hearts Script
     function createHeart() {
       const heart = document.createElement('div');
       heart.classList.add('heart');
       
-      // Randomize position and animation properties
       heart.style.left = Math.random() * 100 + "vw";
-      heart.style.animationDuration = Math.random() * 2 + 3 + "s"; // 3-5 seconds
-      heart.style.opacity = Math.random() * 0.5 + 0.3; // 0.3 to 0.8 opacity
+      heart.style.animationDuration = Math.random() * 2 + 3 + "s";
+      heart.style.opacity = Math.random() * 0.5 + 0.3;
       
-      const size = Math.random() * 10 + 5 + "px"; // 5px to 15px
+      const size = Math.random() * 10 + 5 + "px";
       heart.style.width = size;
       heart.style.height = size;
 
       document.body.appendChild(heart);
 
-      // Remove heart after animation finishes
       setTimeout(() => {
         heart.remove();
       }, 5000);
     }
 
-    // Create a new heart every 300ms
     setInterval(createHeart, 300);
   </script>
 
