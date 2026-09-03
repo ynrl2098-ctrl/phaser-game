@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A Quick Question...</title>
+  <title>A Little Note for You...</title>
   <style>
     * {
       box-sizing: border-box;
@@ -24,7 +24,7 @@
       position: relative;
     }
 
-    /* Animated Glowing Hearts & Sparkles */
+    /* Animated Glowing Hearts */
     .heart {
       position: absolute;
       background-color: #ffd1dc;
@@ -73,9 +73,9 @@
       }
     }
 
-    /* Enhanced Glassmorphism Card Container */
+    /* Frosted Glass Card Container */
     .card-container {
-      background: rgba(43, 20, 68, 0.45);
+      background: rgba(43, 20, 68, 0.55);
       border: 1px solid rgba(255, 255, 255, 0.3);
       padding: 40px 30px;
       border-radius: 24px;
@@ -84,102 +84,90 @@
       box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
       text-align: center;
       max-width: 90%;
-      width: 420px;
+      width: 440px;
       position: relative;
       z-index: 10;
     }
 
-    /* First Page (Quote Screen) */
-    #page1 h1 {
+    /* Page Styling */
+    h1 {
       color: #ffffff;
-      font-size: 1.8rem;
-      font-style: italic;
-      margin-bottom: 30px;
-      line-height: 1.4;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-    }
-
-    /* Second Page (Proposal Screen) */
-    #page2 {
-      display: none;
-    }
-
-    #page2 h1 {
-      color: #ffffff;
-      font-size: 1.9rem;
+      font-size: 1.7rem;
       margin-top: 0;
       margin-bottom: 25px;
+      line-height: 1.5;
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    p.subtext {
+      color: #f3e8ff;
+      font-size: 1.1rem;
+      font-style: italic;
+      margin-top: -10px;
+      margin-bottom: 25px;
+    }
+
+    #page2 {
+      display: none;
     }
 
     .btn-container {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 15px;
-      flex-wrap: wrap;
     }
 
     button {
-      padding: 14px 28px;
+      padding: 14px 32px;
       font-size: 1.15rem;
       font-weight: bold;
       border: none;
       border-radius: 30px;
       cursor: pointer;
       transition: all 0.3s ease;
-    }
-
-    .primary-btn {
       background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
       color: white;
       box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
     }
 
-    .primary-btn:hover {
+    button:hover {
       transform: translateY(-2px) scale(1.05);
       box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6);
     }
 
-    .secondary-btn {
-      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
-      color: white;
-      box-shadow: 0 4px 15px rgba(244, 63, 94, 0.4);
-    }
-
-    .secondary-btn:hover {
-      transform: translateY(-2px) scale(1.05);
-      box-shadow: 0 6px 20px rgba(244, 63, 94, 0.6);
-    }
-
     #responseMessage {
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       font-weight: bold;
       color: #ffffff;
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
       display: none;
+      line-height: 1.4;
     }
   </style>
 </head>
 <body>
 
   <div class="card-container">
-    <!-- PAGE 1: Quote Screen -->
+    <!-- PAGE 1: Silence Quote & Single Warm Button -->
     <div id="page1">
-      <h1>"Would you like to listen to me once?" 💭✨</h1>
-      <button id="listenBtn" class="primary-btn">Yes, I'm listening ❤️</button>
+      <h1>"I know we aren't talking right now, but the silence feels a bit too quiet without you." 💭✨</h1>
+      <p class="subtext">Would you like to hear what's on my mind?</p>
+      <div class="btn-container">
+        <button id="listenBtn">I'm listening, tell me ❤️</button>
+      </div>
     </div>
 
-    <!-- PAGE 2: Proposal Screen -->
+    <!-- PAGE 2: Cafe Proposal & Single Positive Button -->
     <div id="page2">
-      <h1 id="question">Would you like to go on a cafe date with me? ☕✨</h1>
+      <h1 id="question">Let's break the silence over coffee... can I take you out on a cafe date? ☕✨</h1>
 
       <div class="btn-container" id="proposalBtns">
-        <button id="yesBtn1" class="primary-btn">Yes, I'd love to!</button>
-        <button id="yesBtn2" class="secondary-btn">Definitely! ☕</button>
+        <button id="acceptBtn">I'd love that, let's go ☕✨</button>
       </div>
 
-      <div id="responseMessage">Yay! Can't wait for our date! ☕❤️</div>
+      <div id="responseMessage">
+        I can't wait to see you! <br> Pick a time and I'm there. ☕❤️
+      </div>
     </div>
   </div>
 
@@ -188,29 +176,25 @@
     const page2 = document.getElementById('page2');
     const listenBtn = document.getElementById('listenBtn');
     
-    const yesBtn1 = document.getElementById('yesBtn1');
-    const yesBtn2 = document.getElementById('yesBtn2');
+    const acceptBtn = document.getElementById('acceptBtn');
     const proposalBtns = document.getElementById('proposalBtns');
     const responseMessage = document.getElementById('responseMessage');
     const question = document.getElementById('question');
 
-    // Page 1 to Page 2 Transition
+    // Transition from Page 1 to Page 2
     listenBtn.addEventListener('click', () => {
       page1.style.display = 'none';
       page2.style.display = 'block';
     });
 
-    // Accept Action
-    function acceptDate() {
+    // Accept Action on Page 2
+    acceptBtn.addEventListener('click', () => {
       question.style.display = 'none';
       proposalBtns.style.display = 'none';
       responseMessage.style.display = 'block';
-    }
+    });
 
-    yesBtn1.addEventListener('click', acceptDate);
-    yesBtn2.addEventListener('click', acceptDate);
-
-    // Glowing Floating Hearts Generator
+    // Glowing Floating Hearts Script
     function createHeart() {
       const heart = document.createElement('div');
       heart.classList.add('heart');
