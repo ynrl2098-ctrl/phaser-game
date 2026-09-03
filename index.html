@@ -3,30 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cafe Date?</title>
+  <title>Cafe Date Proposal</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      min-height: 100vh;
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #ffe6e8;
+      background-image: url('background.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      overflow: hidden; /* Important for floating hearts */
+      position: relative;
+    }
+
+    /* Floating Heart Styles */
+    .heart {
+      position: absolute;
+      background-color: #ffb6c1; /* Light pink */
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      transform: rotate(-45deg);
+      opacity: 0.8;
+      animation: floatUp 4s linear infinite;
+      pointer-events: none; /* Prevents interaction issues */
+      z-index: 1; /* Puts hearts behind the card */
+    }
+
+    .heart::before,
+    .heart::after {
+      content: "";
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: #ffb6c1;
+      border-radius: 50%;
+    }
+
+    .heart::before {
+      top: -5px;
+      left: 0;
+    }
+
+    .heart::after {
+      top: 0;
+      left: 5px;
+    }
+
+    @keyframes floatUp {
+      0% {
+        transform: translateY(100vh) rotate(-45deg) scale(1);
+        opacity: 0.8;
+      }
+      100% {
+        transform: translateY(-10vh) rotate(-45deg) scale(1.2);
+        opacity: 0;
+      }
+    }
+
+    /* Frosted glass card container */
+    .card-container {
+      background: rgba(255, 255, 255, 0.75);
+      padding: 40px 30px;
+      border-radius: 24px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
       text-align: center;
+      max-width: 90%;
+      width: 400px;
+      position: relative;
+      z-index: 10; /* Keeps the card in front of the hearts */
     }
 
     h1 {
-      color: #d63384;
-      font-size: 2.5rem;
-      margin-bottom: 20px;
+      color: #6a3089;
+      font-size: 2rem;
+      margin-top: 0;
+      margin-bottom: 25px;
     }
 
     .btn-container {
       position: relative;
-      width: 300px;
-      height: 150px;
+      width: 100%;
+      height: 120px;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -34,52 +102,57 @@
     }
 
     button {
-      padding: 12px 25px;
+      padding: 12px 28px;
       font-size: 1.2rem;
       font-weight: bold;
       border: none;
-      border-radius: 25px;
+      border-radius: 30px;
       cursor: pointer;
-      transition: transform 0.2s ease;
+      transition: transform 0.2s ease, background-color 0.2s ease;
     }
 
     #yesBtn {
-      background-color: #28a745;
+      background-color: #8a4ba8;
       color: white;
+      box-shadow: 0 4px 12px rgba(138, 75, 168, 0.3);
     }
 
     #yesBtn:hover {
       transform: scale(1.1);
+      background-color: #733c8f;
     }
 
     #noBtn {
-      background-color: #dc3545;
+      background-color: #e07aa0;
       color: white;
       position: absolute;
       top: 50%;
-      left: 60%;
+      left: 65%;
       transform: translate(-50%, -50%);
       transition: top 0.15s ease, left 0.15s ease;
+      box-shadow: 0 4px 12px rgba(224, 122, 160, 0.3);
     }
 
     #responseMessage {
-      margin-top: 20px;
-      font-size: 1.5rem;
-      color: #d63384;
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #6a3089;
       display: none;
     }
   </style>
 </head>
 <body>
 
-  <h1 id="question">Would you like to go on a cafe date with me? ☕✨</h1>
+  <div class="card-container">
+    <h1 id="question">Would you like to go on a cafe date with me? ☕✨</h1>
 
-  <div class="btn-container">
-    <button id="yesBtn">Yes!</button>
-    <button id="noBtn">No</button>
+    <div class="btn-container">
+      <button id="yesBtn">Yes!</button>
+      <button id="noBtn">No</button>
+    </div>
+
+    <div id="responseMessage">Yay! Can't wait for our date! ☕❤️</div>
   </div>
-
-  <div id="responseMessage">Yay! Can't wait for our date! ☕❤️</div>
 
   <script>
     const noBtn = document.getElementById('noBtn');
@@ -87,10 +160,9 @@
     const responseMessage = document.getElementById('responseMessage');
     const question = document.getElementById('question');
 
-    // Move the "No" button randomly when mouse enters or touches it
+    // Button evasion logic
     function moveButton() {
-      // Keep inside screen bounds
-      const padding = 50;
+      const padding = 60;
       const maxX = window.innerWidth - noBtn.offsetWidth - padding;
       const maxY = window.innerHeight - noBtn.offsetHeight - padding;
 
@@ -105,12 +177,36 @@
     noBtn.addEventListener('mouseenter', moveButton);
     noBtn.addEventListener('touchstart', moveButton);
 
-    // Show celebration message on "Yes" click
     yesBtn.addEventListener('click', () => {
       question.style.display = 'none';
       document.querySelector('.btn-container').style.display = 'none';
       responseMessage.style.display = 'block';
     });
+
+    // --- HEART GENERATION SCRIPT ---
+    function createHeart() {
+      const heart = document.createElement('div');
+      heart.classList.add('heart');
+      
+      // Randomize position and animation properties
+      heart.style.left = Math.random() * 100 + "vw";
+      heart.style.animationDuration = Math.random() * 2 + 3 + "s"; // 3-5 seconds
+      heart.style.opacity = Math.random() * 0.5 + 0.3; // 0.3 to 0.8 opacity
+      
+      const size = Math.random() * 10 + 5 + "px"; // 5px to 15px
+      heart.style.width = size;
+      heart.style.height = size;
+
+      document.body.appendChild(heart);
+
+      // Remove heart after animation finishes
+      setTimeout(() => {
+        heart.remove();
+      }, 5000);
+    }
+
+    // Create a new heart every 300ms
+    setInterval(createHeart, 300);
   </script>
 
 </body>
