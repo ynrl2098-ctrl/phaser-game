@@ -1,27 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A Special Question</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cafe Date?</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #ffe6e8;
+      text-align: center;
+    }
+
+    h1 {
+      color: #d63384;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+
+    .btn-container {
+      position: relative;
+      width: 300px;
+      height: 150px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+    }
+
+    button {
+      padding: 12px 25px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    #yesBtn {
+      background-color: #28a745;
+      color: white;
+    }
+
+    #yesBtn:hover {
+      transform: scale(1.1);
+    }
+
+    #noBtn {
+      background-color: #dc3545;
+      color: white;
+      position: absolute;
+      top: 50%;
+      left: 60%;
+      transform: translate(-50%, -50%);
+      transition: top 0.15s ease, left 0.15s ease;
+    }
+
+    #responseMessage {
+      margin-top: 20px;
+      font-size: 1.5rem;
+      color: #d63384;
+      display: none;
+    }
+  </style>
 </head>
 <body>
-    <!-- Vintage Rangoli Background Overlay -->
-    <div class="vintage-bg">
-        <div class="rangoli-pattern"></div>
-    </div>
 
-    <div class="container" id="main-container">
-        <div id="step-content">
-            <h1 id="quote-title">System Check: Important Question Pending</h1>
-            <p id="quote-text">I've been analyzing all variables, and everything points to one logical outcome.</p>
-        </div>
-        <div class="button-group">
-            <button id="yes-btn">Yes, absolutely!</button>
-            <button id="no-btn">No</button>
-        </div>
-    </div>
-    <script src="script.js"></script>
+  <h1 id="question">Would you like to go on a cafe date with me? ☕✨</h1>
+
+  <div class="btn-container">
+    <button id="yesBtn">Yes!</button>
+    <button id="noBtn">No</button>
+  </div>
+
+  <div id="responseMessage">Yay! Can't wait for our date! ☕❤️</div>
+
+  <script>
+    const noBtn = document.getElementById('noBtn');
+    const yesBtn = document.getElementById('yesBtn');
+    const responseMessage = document.getElementById('responseMessage');
+    const question = document.getElementById('question');
+
+    // Move the "No" button randomly when mouse enters or touches it
+    function moveButton() {
+      // Keep inside screen bounds
+      const padding = 50;
+      const maxX = window.innerWidth - noBtn.offsetWidth - padding;
+      const maxY = window.innerHeight - noBtn.offsetHeight - padding;
+
+      const randomX = Math.max(padding, Math.floor(Math.random() * maxX));
+      const randomY = Math.max(padding, Math.floor(Math.random() * maxY));
+
+      noBtn.style.position = 'fixed';
+      noBtn.style.left = `${randomX}px`;
+      noBtn.style.top = `${randomY}px`;
+    }
+
+    noBtn.addEventListener('mouseenter', moveButton);
+    noBtn.addEventListener('touchstart', moveButton);
+
+    // Show celebration message on "Yes" click
+    yesBtn.addEventListener('click', () => {
+      question.style.display = 'none';
+      document.querySelector('.btn-container').style.display = 'none';
+      responseMessage.style.display = 'block';
+    });
+  </script>
+
 </body>
 </html>
