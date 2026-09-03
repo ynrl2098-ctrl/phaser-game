@@ -3,50 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A Story For You ✨</title>
+    <title>A Special Journey For You ✨</title>
+    <!-- Premium Google Fonts -->
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://googleapis.com/css2?family=Caveat:wght@700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #ffe5ec 0%, #ffb3c6 100%);
+            background: #0f0c1b; /* Rich deep twilight color base */
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
             overflow: hidden;
             position: relative;
         }
 
-        .card {
-            text-align: center;
-            background: rgba(255, 255, 255, 0.88);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 40px 30px;
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(255, 75, 110, 0.15);
-            max-width: 400px;
-            width: 85%;
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            z-index: 10;
-            transition: all 0.4s ease;
+        /* Interactive Live Canvas Background layer */
+        #bgCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
         }
 
-        /* Step screens are hidden by default except step 1 */
+        /* Gorgeous translucent premium glass card overlay */
+        .card {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            padding: 40px 30px;
+            border-radius: 30px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), 
+                        0 0 40px rgba(255, 105, 180, 0.15);
+            max-width: 410px;
+            width: 88%;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            z-index: 10;
+            transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        /* Multistep animation controls */
         .step {
             display: none;
         }
         .step.active {
             display: block;
-            animation: fadeIn 0.5s ease forward;
+            animation: elegantFadeUp 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
         }
 
         h1 {
-            color: #ff4b6e;
-            font-size: 1.8rem;
+            color: #ffffff;
+            font-size: 1.75rem;
             margin-bottom: 20px;
-            font-weight: 700;
+            font-weight: 600;
             line-height: 1.4;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .highlight-text {
+            font-family: 'Caveat', cursive;
+            color: #ff65a3;
+            font-size: 2.5rem;
+            display: block;
+            margin-top: 5px;
+            text-shadow: 0 0 15px rgba(255, 101, 163, 0.4);
         }
 
         .image-box img {
@@ -54,28 +87,30 @@
             height: 160px;
             object-fit: contain;
             margin-bottom: 20px;
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
         }
 
-        /* Progress Dots */
+        /* Timeline Pagination Indicators */
         .progress-dots {
             display: flex;
             justify-content: center;
-            gap: 8px;
-            margin-bottom: 25px;
+            gap: 10px;
+            margin-bottom: 30px;
         }
         .dot {
             width: 8px;
             height: 8px;
-            background: #ffccd5;
+            background: rgba(255, 255, 255, 0.2);
             border-radius: 50px;
-            transition: all 0.3s;
+            transition: all 0.4s ease;
         }
         .dot.active {
-            background: #ff4b6e;
-            width: 20px;
+            background: #ff65a3;
+            width: 24px;
+            box-shadow: 0 0 10px #ff65a3;
         }
 
-        /* Buttons layout */
+        /* Interactive Premium Buttons */
         .btn-wrapper {
             display: flex;
             justify-content: center;
@@ -87,72 +122,72 @@
         }
 
         button {
-            padding: 12px 30px;
+            padding: 14px 32px;
             font-size: 1.1rem;
             font-weight: 600;
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s, box-shadow 0.3s;
+            outline: none;
         }
 
         .next-btn {
-            background: linear-gradient(135deg, #ff4b6e 0%, #ff2a55 100%);
+            background: linear-gradient(135deg, #ff65a3 0%, #fd3a84 100%);
             color: white;
             width: 100%;
         }
+        .next-btn:hover {
+            box-shadow: 0 10px 25px rgba(253, 58, 132, 0.4);
+            transform: translateY(-2px);
+        }
 
         #yesBtn {
-            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
             color: white;
+        }
+        #yesBtn:hover {
+            box-shadow: 0 10px 25px rgba(0, 180, 219, 0.4);
         }
 
         #noBtn {
-            background: linear-gradient(135deg, #757575 0%, #616161 100%);
-            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.15);
             position: absolute;
         }
 
-        /* Floating background hearts animation */
-        .heart-bg {
+        /* Pure CSS Floating aesthetic Background Elements */
+        .heart-float {
             position: absolute;
-            font-size: 20px;
-            color: rgba(255, 75, 110, 0.2);
-            animation: floatUp 6s linear infinite;
+            font-size: 22px;
+            color: rgba(255, 105, 180, 0.15);
+            animation: floatSlowly 8s linear infinite;
             bottom: -50px;
             user-select: none;
             pointer-events: none;
+            z-index: 2;
         }
 
-        @keyframes floatUp {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(-105vh) rotate(360deg); opacity: 0; }
+        @keyframes floatSlowly {
+            0% { transform: translateY(0) rotate(0deg) scale(0.8); opacity: 0; }
+            15% { opacity: 1; }
+            100% { transform: translateY(-110vh) rotate(270deg) scale(1.2); opacity: 0; }
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes elegantFadeUp {
+            from { opacity: 0; transform: translateY(20px); filter: blur(5px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
         }
     </style>
 </head>
 <body>
 
-    <!-- Floating hearts script -->
-    <script>
-        function createHeart() {
-            const heart = document.createElement('div');
-            heart.classList.add('heart-bg');
-            heart.innerHTML = '❤️';
-            heart.style.left = Math.random() * 100 + 'vw';
-            heart.style.animationDuration = Math.random() * 3 + 4 + 's';
-            document.body.appendChild(heart);
-            setTimeout(() => heart.remove(), 7000);
-        }
-        setInterval(createHeart, 500);
-    </script>
+    <!-- Dynamic interactive elements background -->
+    <canvas id="bgCanvas"></canvas>
 
     <div class="card">
-        <!-- Progress Indicators -->
+        <!-- Structural progress tracking dashboard -->
         <div class="progress-dots" id="dotsContainer">
             <div class="dot active"></div>
             <div class="dot"></div>
@@ -163,90 +198,77 @@
         <!-- STEP 1 -->
         <div class="step active" id="step1">
             <div class="image-box">
-                <img src="https://giphy.com" alt="Cute wave">
+                <img src="https://giphy.com" alt="Cute wave animation">
             </div>
-            <h1>Hey, I wanted to tell you something... ✨</h1>
+            <h1>Hey, stop scrolling for a second... <span class="highlight-text">I have a secret</span></h1>
             <button class="next-btn" onclick="nextStep(2)">What is it? 👀</button>
         </div>
 
         <!-- STEP 2 -->
         <div class="step" id="step2">
             <div class="image-box">
-                <img src="https://giphy.com" alt="Thinking">
+                <img src="https://giphy.com" alt="Thinking face animation">
             </div>
-            <h1>Every moment spent with you makes my day a whole lot brighter. ☀️</h1>
-            <button class="next-btn" onclick="nextStep(3)">Go on... 🥰</button>
+            <h1>Out of all the paths I cross every day, <span class="highlight-text">yours is my favorite. ☀️</span></h1>
+            <button class="next-btn" onclick="nextStep(3)">Tell me more... 🥰</button>
         </div>
 
         <!-- STEP 3 -->
         <div class="step" id="step3">
             <div class="image-box">
-                <img src="https://giphy.com" alt=" Shy flower">
+                <img src="https://giphy.com" alt="Cute shy look animation">
             </div>
-            <h1>You're incredibly special to me, and I can't look at you without smiling. 🌸</h1>
-            <button class="next-btn" onclick="nextStep(4)">Next ❤️</button>
+            <h1>You have this effortless way of making everything feel <span class="highlight-text">so much brighter. ✨</span></h1>
+            <button class="next-btn" onclick="nextStep(4)">Click Here ❤️</button>
         </div>
 
-        <!-- STEP 4: THE PROPOSAL -->
+        <!-- STEP 4: INTERACTIVE DANCE PORTAL -->
         <div class="step" id="step4">
             <div class="image-box">
-                <img id="finalGif" src="https://giphy.com" alt="Date ask">
+                <img id="finalGif" src="https://giphy.com" alt="Date proposal character">
             </div>
-            <h1 id="questionText">So... Will you make me the happiest person and go out on a date with me? 🌹</h1>
+            <h1 id="questionText">Will you make me the absolute luckiest guy and <span class="highlight-text">go on a date with me? 🌹</span></h1>
             
             <div class="btn-wrapper">
-                <button id="yesBtn" onclick="selectYes()">Yes! Custom 🎉</button>
+                <button id="yesBtn" onclick="selectYes()">Yes! ✨</button>
                 <button id="noBtn" onmouseover="dodgeButton()" onclick="dodgeButton()">No 🥺</button>
             </div>
         </div>
     </div>
 
     <script>
-        let currentStep = 1;
-        const dots = document.querySelectorAll('.dot');
-        const noBtn = document.getElementById('noBtn');
-        const yesBtn = document.getElementById('yesBtn');
-        const questionText = document.getElementById('questionText');
-        const finalGif = document.getElementById('finalGif');
-        const dotsContainer = document.getElementById('dotsContainer');
+        /* --- DYNAMIC INTERACTIVE LIVE CANVAS BACKGROUND --- */
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
 
-        let scaleFactor = 1.0;
+        let particles = [];
+        let mouse = { x: null, y: null, radius: 120 };
 
-        // Navigation controller
-        function nextStep(stepNumber) {
-            document.getElementById(`step${currentStep}`).classList.remove('active');
-            document.getElementById(`step${stepNumber}`).classList.add('active');
-            
-            dots[currentStep - 1].classList.remove('active');
-            dots[stepNumber - 1].classList.add('active');
-            
-            currentStep = stepNumber;
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
         }
 
-        // Runaway logic for the NO button
-        function dodgeButton() {
-            // Generates coordinates keeping the button safely inside the viewport
-            const x = Math.random() * (window.innerWidth - noBtn.offsetWidth - 60) + 30;
-            const y = Math.random() * (window.innerHeight - noBtn.offsetHeight - 60) + 30;
-            
-            noBtn.style.left = `${x}px`;
-            noBtn.style.top = `${y}px`;
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.baseX = this.x;
+                this.baseY = this.y;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = (Math.random() - 0.5) * 0.5;
+                this.speedY = (Math.random() - 0.5) * 0.5;
+            }
+            update() {
+                // Free idle drifting floating logic
+                this.baseX += this.speedX;
+                this.baseY += this.speedY;
 
-            // Increase yes button size slightly every time they try to hover/click No
-            scaleFactor += 0.2;
-            yesBtn.style.transform = `scale(${scaleFactor})`;
-        }
+                // Screen boundary resets
+                if (this.baseX < 0 || this.baseX > canvas.width) this.speedX *= -1;
+                if (this.baseY < 0 || this.baseY > canvas.height) this.speedY *= -1;
 
-        // Celebration screen trigger
-        function selectYes() {
-            questionText.innerHTML = "Yay! It's a date! Can't wait! 🥰❤️✨";
-            finalGif.src = "https://giphy.com";
-            
-            noBtn.style.display = 'none';
-            dotsContainer.style.display = 'none';
-            yesBtn.style.transform = "scale(1.1)";
-            yesBtn.removeAttribute('onclick');
-        }
-    </script>
-</body>
-</html>
+                // Interactive cursor interaction collision wrap
+                let dx = mouse.x - this.baseX;
+                let dy = mouse.y - this.baseY;
